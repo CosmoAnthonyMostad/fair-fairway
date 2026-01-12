@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Flag, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -52,11 +52,13 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary/90 via-primary to-primary-dark relative overflow-hidden">
-      {/* Decorative background elements */}
+      {/* Decorative background elements - behind the white card */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
         <div className="absolute top-1/3 -left-32 w-96 h-96 rounded-full bg-primary-dark/30 blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-64 h-64 rounded-full bg-white/5 blur-2xl" />
+        
+        {/* White fade on green background - bottom right */}
+        <div className="absolute bottom-0 right-0 w-[80%] h-[60%] bg-gradient-to-tl from-white/30 via-white/10 to-transparent blur-2xl" />
         
         {/* Subtle golf-themed decorative elements */}
         <svg className="absolute bottom-0 left-0 w-full h-48 opacity-10" viewBox="0 0 400 200" fill="none">
@@ -64,24 +66,18 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         </svg>
       </div>
 
-      {/* Logo header */}
-      <div className="flex items-center justify-center pt-12 pb-6 relative z-10">
-      <div className="flex flex-col items-center gap-2">
-        <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-          <Flag className="w-8 h-8 text-primary-foreground" strokeWidth={2} />
-        </div>
-        {/* Arching text using SVG */}
-        <svg viewBox="0 0 200 60" className="w-64 h-20">
+      {/* Logo header - bigger arching text, no flag */}
+      <div className="flex items-center justify-center pt-16 pb-8 relative z-10">
+        <svg viewBox="0 0 300 80" className="w-80 h-24">
           <defs>
-            <path id="textArc" d="M 20 50 Q 100 10 180 50" fill="none" />
+            <path id="textArc" d="M 20 65 Q 150 5 280 65" fill="none" />
           </defs>
-          <text className="fill-primary-foreground font-display font-bold" style={{ fontSize: '28px' }}>
+          <text className="fill-primary-foreground font-display font-bold" style={{ fontSize: '42px' }}>
             <textPath href="#textArc" startOffset="50%" textAnchor="middle">
-              Golf App
+              GOLF APP
             </textPath>
           </text>
         </svg>
-      </div>
       </div>
 
       {/* Main content - centered vertically */}
@@ -187,8 +183,8 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
             </div>
           </div>
 
-          {/* Terms text */}
-          <p className="text-center text-xs text-primary-foreground/60 mt-6 px-4">
+          {/* Terms text - black text below white card */}
+          <p className="text-center text-xs text-foreground/70 mt-6 px-4">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>
