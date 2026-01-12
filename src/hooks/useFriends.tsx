@@ -149,11 +149,13 @@ export const useFriends = () => {
 
     try {
       // Check if friendship already exists
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from('friendships')
         .select('*')
         .or(`and(requester_id.eq.${user.id},addressee_id.eq.${addresseeId}),and(requester_id.eq.${addresseeId},addressee_id.eq.${user.id})`)
-        .single();
+        .maybeSingle();
+
+      if (existingError) throw existingError;
 
       if (existing) {
         toast({

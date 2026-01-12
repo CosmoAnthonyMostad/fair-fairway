@@ -135,7 +135,7 @@ export const useGroups = () => {
       console.error('Error creating group:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create group',
+        description: error?.message || 'Failed to create group',
         variant: 'destructive',
       });
       return null;
