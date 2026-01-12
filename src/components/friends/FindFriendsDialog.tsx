@@ -39,11 +39,11 @@ const FindFriendsDialog = ({
     
     setSearching(true);
     try {
-      // Search profiles by display_name (case insensitive)
+      // Search profiles by email (case insensitive)
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .ilike('display_name', `%${searchQuery}%`);
+        .ilike('email', `%${searchQuery}%`);
 
       if (error) throw error;
 
@@ -102,13 +102,13 @@ const FindFriendsDialog = ({
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="pl-9"
-              />
+                <Input
+                  placeholder="Search by email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pl-9"
+                />
             </div>
             <Button 
               onClick={handleSearch} 
@@ -157,7 +157,7 @@ const FindFriendsDialog = ({
 
           {results.length === 0 && searchQuery && !searching && (
             <p className="text-center text-muted-foreground text-sm py-4">
-              Search for friends by their display name
+              Search for friends by their email address
             </p>
           )}
         </div>
