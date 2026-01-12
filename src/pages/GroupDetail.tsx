@@ -52,6 +52,7 @@ interface GroupMember {
   display_name: string | null;
   avatar_url: string | null;
   gsi: number | null;
+  ghi: number | null;
 }
 
 interface GroupDetails {
@@ -143,7 +144,15 @@ const GroupDetail = () => {
         };
       });
 
-      setMembers(membersList);
+      // Sort by GSI ascending (best/lowest first) and calculate relative GHI
+      membersList.sort((a, b) => (a.gsi ?? 999) - (b.gsi ?? 999));
+      const bestGsi = membersList.length > 0 ? (membersList[0].gsi ?? 0) : 0;
+      const membersWithGhi = membersList.map(member => ({
+        ...member,
+        ghi: member.gsi !== null ? Math.round((member.gsi - bestGsi) * 10) / 10 : null,
+      }));
+
+      setMembers(membersWithGhi);
 
       // Fetch matches with course info
       const { data: matchesData, error: matchesError } = await supabase
@@ -301,7 +310,7 @@ const GroupDetail = () => {
                   {member.user_id === group.owner_id && <Crown className="w-4 h-4 text-accent flex-shrink-0" />}
                   {member.user_id === user?.id && <span className="text-xs text-muted-foreground">(You)</span>}
                 </div>
-                {member.gsi !== null && <p className="text-sm text-muted-foreground">GSI: {member.gsi}</p>}
+                {member.ghi !== null && <p className="text-sm text-muted-foreground">GHI: {member.ghi === 0 ? '0' : `+${member.ghi}`}</p>}
               </div>
             </div>
           ))}
