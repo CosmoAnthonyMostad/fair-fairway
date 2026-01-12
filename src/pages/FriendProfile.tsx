@@ -45,6 +45,7 @@ const FriendProfile = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [calculatedStats, setCalculatedStats] = useState({ rounds: 0, wins: 0 });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -66,8 +67,7 @@ const FriendProfile = () => {
 
         setProfile(profileData);
 
-        // Fetch recent matches where this user participated
-        // Get team_players for this user
+        // Fetch all team_players for this user to calculate stats
         const { data: teamPlayers, error: tpError } = await supabase
           .from('team_players')
           .select('team_id')
@@ -89,7 +89,34 @@ const FriendProfile = () => {
           if (teams && teams.length > 0) {
             const matchIds = [...new Set(teams.map(t => t.match_id))];
 
-            // Get matches with course info
+            // Get ALL completed matches for stats calculation
+            const { data: allCompletedMatches, error: allMatchesError } = await supabase
+              .from('matches')
+              .select('id')
+              .in('id', matchIds)
+              .eq('status', 'completed');
+
+            if (allMatchesError) throw allMatchesError;
+
+            // Calculate total rounds and wins from actual match data
+            let totalRounds = 0;
+            let totalWins = 0;
+
+            if (allCompletedMatches) {
+              allCompletedMatches.forEach(match => {
+                const userTeam = teams.find(t => t.match_id === match.id);
+                if (userTeam) {
+                  totalRounds++;
+                  if (userTeam.is_winner) {
+                    totalWins++;
+                  }
+                }
+              });
+            }
+
+            setCalculatedStats({ rounds: totalRounds, wins: totalWins });
+
+            // Get recent matches with course info (limit 10)
             const { data: matches, error: matchesError } = await supabase
               .from('matches')
               .select('id, match_date, format, status, courses(name)')
@@ -128,8 +155,8 @@ const FriendProfile = () => {
     fetchProfile();
   }, [userId, navigate]);
 
-  const winRate = profile?.total_rounds && profile.total_rounds > 0 
-    ? Math.round((profile.total_wins || 0) / profile.total_rounds * 100) 
+  const winRate = calculatedStats.rounds > 0 
+    ? Math.round((calculatedStats.wins / calculatedStats.rounds) * 100) 
     : 0;
 
   if (loading) {
@@ -180,7 +207,7 @@ const FriendProfile = () => {
             <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-secondary flex items-center justify-center">
               <Calendar className="w-5 h-5 text-primary" />
             </div>
-            <p className="text-2xl font-bold text-foreground">{profile.total_rounds || 0}</p>
+            <p className="text-2xl font-bold text-foreground">{calculatedStats.rounds}</p>
             <p className="text-xs text-muted-foreground">Rounds</p>
           </div>
           
