@@ -154,6 +154,7 @@ const Groups = () => {
         open={createGroupOpen}
         onOpenChange={setCreateGroupOpen}
         onCreateGroup={createGroup}
+        friends={friends}
       />
       
       <FindFriendsDialog

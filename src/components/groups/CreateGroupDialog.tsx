@@ -3,35 +3,62 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Users, User, Search } from 'lucide-react';
+import type { Friend } from '@/hooks/useFriends';
 
 interface CreateGroupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateGroup: (name: string) => Promise<any>;
+  onCreateGroup: (name: string, memberIds?: string[]) => Promise<any>;
+  friends: Friend[];
 }
 
-const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup }: CreateGroupDialogProps) => {
+const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup, friends }: CreateGroupDialogProps) => {
   const [name, setName] = useState('');
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const filteredFriends = friends.filter(friend => 
+    friend.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    searchQuery === ''
+  );
+
+  const handleToggleFriend = (userId: string) => {
+    setSelectedFriends(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     setLoading(true);
-    const result = await onCreateGroup(name.trim());
+    const result = await onCreateGroup(name.trim(), selectedFriends);
     setLoading(false);
 
     if (result) {
       setName('');
+      setSelectedFriends([]);
+      setSearchQuery('');
       onOpenChange(false);
     }
   };
 
+  const handleClose = () => {
+    setName('');
+    setSelectedFriends([]);
+    setSearchQuery('');
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -41,7 +68,7 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup }: CreateGroupDia
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-hidden flex flex-col">
           <div className="space-y-2">
             <Label htmlFor="group-name">Group Name</Label>
             <Input
@@ -53,12 +80,79 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup }: CreateGroupDia
             />
           </div>
 
-          <div className="flex gap-3">
+          {/* Friends Selection */}
+          <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+            <Label>Add Friends to Group</Label>
+            
+            {friends.length > 0 ? (
+              <>
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search friends..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Friend List */}
+                <div className="flex-1 overflow-y-auto space-y-1 max-h-40 border rounded-lg p-2">
+                  {filteredFriends.length > 0 ? (
+                    filteredFriends.map((friend) => (
+                      <label
+                        key={friend.user_id}
+                        className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors"
+                      >
+                        <Checkbox
+                          checked={selectedFriends.includes(friend.user_id)}
+                          onCheckedChange={() => handleToggleFriend(friend.user_id)}
+                        />
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                          {friend.avatar_url ? (
+                            <img
+                              src={friend.avatar_url}
+                              alt={friend.display_name || 'Friend'}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-foreground truncate">
+                          {friend.display_name || 'Anonymous'}
+                        </span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No friends match your search
+                    </p>
+                  )}
+                </div>
+
+                {selectedFriends.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedFriends.length} friend{selectedFriends.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="border rounded-lg p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No friends yet. You can add friends later!
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => onOpenChange(false)}
+              onClick={handleClose}
             >
               Cancel
             </Button>
