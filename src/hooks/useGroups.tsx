@@ -70,7 +70,7 @@ export const useGroups = () => {
     }
   };
 
-  const createGroup = async (name: string, avatarUrl?: string) => {
+  const createGroup = async (name: string, memberIds?: string[]) => {
     if (!user) return null;
 
     try {
@@ -80,7 +80,6 @@ export const useGroups = () => {
         .insert({
           name,
           owner_id: user.id,
-          avatar_url: avatarUrl || null,
         })
         .select()
         .single();
@@ -96,6 +95,34 @@ export const useGroups = () => {
         });
 
       if (memberError) throw memberError;
+
+      // Add selected friends as members
+      if (memberIds && memberIds.length > 0) {
+        const memberInserts = memberIds.map(userId => ({
+          group_id: group.id,
+          user_id: userId,
+        }));
+
+        const { error: friendsError } = await supabase
+          .from('group_members')
+          .insert(memberInserts);
+
+        if (friendsError) {
+          console.error('Error adding friends to group:', friendsError);
+          // Don't fail the whole operation, just notify
+        }
+
+        // Send group invite notifications to added members
+        const notificationInserts = memberIds.map(userId => ({
+          user_id: userId,
+          type: 'group_invite',
+          title: 'Added to Group',
+          message: `You were added to the group "${name}"`,
+          related_id: group.id,
+        }));
+
+        await supabase.from('notifications').insert(notificationInserts);
+      }
 
       toast({
         title: 'Success',
