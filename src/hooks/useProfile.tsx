@@ -10,8 +10,8 @@ export interface Profile {
   avatar_url: string | null;
   home_city: string | null;
   phi: number | null;
-  total_rounds: number | null;
-  total_wins: number | null;
+  total_rounds: number;
+  total_wins: number;
   created_at: string;
   updated_at: string;
 }
@@ -29,14 +29,49 @@ export const useProfile = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // Fetch base profile
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
-      setProfile(data);
+      if (profileError) throw profileError;
+      if (!profileData) {
+        setProfile(null);
+        return;
+      }
+
+      // Calculate actual rounds from completed matches
+      const { data: roundsData } = await supabase
+        .from('team_players')
+        .select('team_id, teams!inner(match_id, is_winner, matches!inner(status))')
+        .eq('user_id', user.id);
+
+      // Count completed rounds and wins
+      let totalRounds = 0;
+      let totalWins = 0;
+      const countedMatches = new Set<string>();
+
+      (roundsData || []).forEach((tp: any) => {
+        const matchId = tp.teams?.match_id;
+        const status = tp.teams?.matches?.status;
+        const isWinner = tp.teams?.is_winner;
+
+        if (status === 'completed' && matchId && !countedMatches.has(matchId)) {
+          countedMatches.add(matchId);
+          totalRounds++;
+          if (isWinner) {
+            totalWins++;
+          }
+        }
+      });
+
+      setProfile({
+        ...profileData,
+        total_rounds: totalRounds,
+        total_wins: totalWins,
+      });
     } catch (error: any) {
       console.error('Error fetching profile:', error);
       toast({
