@@ -19,6 +19,7 @@ import {
   LogOut,
   Trash2,
   UserPlus,
+  Image,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -101,7 +102,8 @@ const GroupDetail = () => {
   const [matchDetailId, setMatchDetailId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [deleteMatchState, setDeleteMatchState] = useState<DeleteMatchState | null>(null);
-
+  const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
+  const [matchPhotos, setMatchPhotos] = useState<{ url: string; date: string; courseName: string }[]>([]);
   const isOwner = group?.owner_id === user?.id;
 
   const fetchGroupDetails = async () => {
@@ -223,6 +225,18 @@ const GroupDetail = () => {
       });
 
       setMatches(matchesList);
+
+      // Extract photos from matches
+      const photos = (matchesData || [])
+        .filter(m => m.photo_url)
+        .map(m => ({
+          url: m.photo_url!,
+          date: m.match_date,
+          courseName: (m.courses as any)?.name || 'Unknown Course',
+        }))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      setMatchPhotos(photos);
     } catch (error: any) {
       console.error('Error fetching group:', error);
       toast({ title: 'Error', description: 'Failed to load group', variant: 'destructive' });
@@ -353,6 +367,10 @@ const GroupDetail = () => {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => setPhotosDialogOpen(true)}>
+              <Image className="w-4 h-4 mr-2" />Match Photos
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             {isOwner ? (
               <>
                 <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}><Pencil className="w-4 h-4 mr-2" />Rename Group</DropdownMenuItem>
@@ -477,6 +495,41 @@ const GroupDetail = () => {
       <CreateMatchDialog open={createMatchDialogOpen} onOpenChange={setCreateMatchDialogOpen} groupId={groupId!} onMatchCreated={fetchGroupDetails} />
       <TeamSetupDialog open={!!teamSetupMatchId} onOpenChange={(open) => !open && setTeamSetupMatchId(null)} matchId={teamSetupMatchId || ''} groupId={groupId!} format={teamSetupFormat} onTeamsCreated={fetchGroupDetails} />
       <MatchDetailDialog open={!!matchDetailId} onOpenChange={(open) => !open && setMatchDetailId(null)} matchId={matchDetailId || ''} onMatchUpdated={fetchGroupDetails} />
+
+      {/* Match Photos Dialog */}
+      <Dialog open={photosDialogOpen} onOpenChange={setPhotosDialogOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Image className="w-5 h-5" />
+              Match Photos
+            </DialogTitle>
+          </DialogHeader>
+          {matchPhotos.length > 0 ? (
+            <div className="grid grid-cols-2 gap-2">
+              {matchPhotos.map((photo, idx) => (
+                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                  <img 
+                    src={photo.url} 
+                    alt={`Match at ${photo.courseName}`} 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                    <p className="text-white text-xs font-medium truncate">{photo.courseName}</p>
+                    <p className="text-white/70 text-xs">{new Date(photo.date).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center">
+              <Image className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-muted-foreground">No match photos yet.</p>
+              <p className="text-sm text-muted-foreground mt-1">Photos will appear here when added to matches.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
