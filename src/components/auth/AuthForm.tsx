@@ -2,10 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Flag, Mail, Lock, User } from 'lucide-react';
+import { Flag, Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -53,114 +51,139 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Hero illustration */}
-      <div className="flex-none h-56 gradient-primary flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          {/* Decorative circles */}
-          <div className="absolute top-4 left-8 w-24 h-24 rounded-full bg-primary-foreground/10" />
-          <div className="absolute bottom-8 right-12 w-32 h-32 rounded-full bg-primary-foreground/10" />
-          <div className="absolute top-12 right-20 w-16 h-16 rounded-full bg-primary-foreground/10" />
-        </div>
-        <div className="relative flex items-center gap-3">
-          <Flag className="w-12 h-12 text-primary-foreground" strokeWidth={1.5} />
-          <h1 className="text-3xl font-display font-bold text-primary-foreground">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary/90 via-primary to-primary-dark relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute top-1/3 -left-32 w-96 h-96 rounded-full bg-primary-dark/30 blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-64 h-64 rounded-full bg-white/5 blur-2xl" />
+        
+        {/* Subtle golf-themed decorative elements */}
+        <svg className="absolute bottom-0 left-0 w-full h-48 opacity-10" viewBox="0 0 400 200" fill="none">
+          <path d="M0 150 Q100 100 200 150 T400 150 L400 200 L0 200 Z" fill="currentColor" className="text-primary-foreground" />
+        </svg>
+      </div>
+
+      {/* Logo header */}
+      <div className="flex items-center justify-center pt-12 pb-6 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <Flag className="w-6 h-6 text-primary-foreground" strokeWidth={2} />
+          </div>
+          <h1 className="text-2xl font-display font-bold text-primary-foreground tracking-tight">
             Golf App
           </h1>
         </div>
       </div>
 
-      {/* Form */}
-      <div className="flex-1 px-6 -mt-8">
-        <Card className="shadow-xl border-0">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="font-display text-xl">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
-            </CardTitle>
-            <CardDescription>
-              {isLogin
-                ? 'Sign in to continue to your golf groups'
-                : 'Join your friends and start tracking matches'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Main content - centered vertically */}
+      <div className="flex-1 flex flex-col justify-center px-6 pb-8 relative z-10">
+        {/* Welcome text */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-display font-bold text-primary-foreground mb-3">
+            {isLogin ? 'Welcome back!' : 'Join the fairway'}
+          </h2>
+          <p className="text-primary-foreground/80 text-base max-w-xs mx-auto">
+            {isLogin
+              ? 'Sign in to continue tracking your golf matches'
+              : 'Create an account to start tracking matches with friends'}
+          </p>
+        </div>
+
+        {/* Form card */}
+        <div className="w-full max-w-sm mx-auto">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/20 p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                     <Input
                       id="displayName"
                       type="text"
                       placeholder="Your name"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="pl-10"
+                      className="pl-12 h-14 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
                     />
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="Email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pl-10"
+                    className="pl-12 h-14 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="pl-10"
+                    className="pl-12 h-14 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
                   />
                 </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full gradient-primary text-primary-foreground font-semibold"
+                className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background font-semibold text-base shadow-lg shadow-foreground/20 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                 disabled={loading}
               >
-                {loading
-                  ? 'Loading...'
-                  : isLogin
-                  ? 'Sign In'
-                  : 'Create Account'}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Processing...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    {isLogin ? 'Sign In' : 'Create Account'}
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 pt-6 border-t border-muted/20">
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-primary hover:underline"
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {isLogin
-                  ? "Don't have an account? Sign up"
-                  : 'Already have an account? Sign in'}
+                  ? "Don't have an account? "
+                  : 'Already have an account? '}
+                <span className="font-semibold text-primary underline-offset-2 hover:underline">
+                  {isLogin ? 'Sign up' : 'Sign in'}
+                </span>
               </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Terms text */}
+          <p className="text-center text-xs text-primary-foreground/60 mt-6 px-4">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
       </div>
     </div>
   );
