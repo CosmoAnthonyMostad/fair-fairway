@@ -3,7 +3,7 @@ import { Users, User, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { path: '/groups', label: 'Groups', icon: Users },
+  { path: '/groups', label: 'Groups & Friends', icon: Users },
   { path: '/profile', label: 'Profile', icon: User },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
