@@ -1,8 +1,6 @@
-import { Calendar, MapPin, Trophy, Crown, Share2 } from 'lucide-react';
+import { Calendar, MapPin, Trophy, Crown } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { shareMatch } from '@/lib/share';
 
 interface Match {
   id: string;
@@ -53,24 +51,12 @@ const getStatusLabel = (status: string) => {
 };
 
 export const MatchCard = ({ match, onClick }: MatchCardProps) => {
-  const handleShare = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await shareMatch({
-      id: match.id,
-      courseName: match.course_name || 'Unknown Course',
-      format: formatLabel(match.format),
-      date: format(new Date(match.match_date), 'MMM d, yyyy'),
-      winnerNames: match.winner_names,
-    });
-  };
-
   const showStatusBadge = match.status !== 'completed';
-  const showShareButton = match.status === 'completed';
 
   return (
     <div
       onClick={onClick}
-      className="bg-card rounded-lg border border-border p-4 hover:bg-secondary/30 transition-colors cursor-pointer relative"
+      className="bg-card rounded-lg border border-border p-4 hover:bg-secondary/30 transition-colors cursor-pointer"
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 pr-2">
@@ -88,16 +74,6 @@ export const MatchCard = ({ match, onClick }: MatchCardProps) => {
           <Badge variant="outline" className={getStatusColor(match.status)}>
             {getStatusLabel(match.status)}
           </Badge>
-        )}
-        {showShareButton && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={handleShare}
-          >
-            <Share2 className="w-4 h-4" />
-          </Button>
         )}
       </div>
 
