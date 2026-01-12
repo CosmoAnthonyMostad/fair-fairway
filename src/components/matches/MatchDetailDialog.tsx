@@ -7,10 +7,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, User, Camera, Pencil, X, MapPin, Calendar } from 'lucide-react';
+import { Trophy, User, Camera, Pencil, X, MapPin, Calendar, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { calculateGsiAdjustment } from '@/lib/handicap';
 
@@ -48,6 +58,7 @@ interface MatchDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   matchId: string;
   onMatchUpdated: () => void;
+  onDeleteMatch?: (matchId: string) => void;
 }
 
 const formatLabel = (format: string): string => {
@@ -139,6 +150,7 @@ export const MatchDetailDialog = ({
   onOpenChange,
   matchId,
   onMatchUpdated,
+  onDeleteMatch,
 }: MatchDetailDialogProps) => {
   const { toast } = useToast();
   const [matchInfo, setMatchInfo] = useState<MatchInfo | null>(null);
@@ -149,6 +161,7 @@ export const MatchDetailDialog = ({
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const fetchMatchDetails = async () => {
     try {
@@ -585,25 +598,60 @@ export const MatchDetailDialog = ({
             })}
 
             {/* Actions */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-2 pt-2">
+              {onDeleteMatch && (
+                <Button
+                  variant="outline"
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
+              )}
+              <div className="flex-1" />
               <Button
                 variant="outline"
-                className="flex-1"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
               <Button
-                className="flex-1 gradient-primary text-primary-foreground"
+                className="gradient-primary text-primary-foreground"
                 onClick={handleSaveScores}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting ? 'Saving...' : 'Save'}
               </Button>
             </div>
           </div>
         )}
       </DialogContent>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Match</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this match? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                onOpenChange(false);
+                onDeleteMatch?.(matchId);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
