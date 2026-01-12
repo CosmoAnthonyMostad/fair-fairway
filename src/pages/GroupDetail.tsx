@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { AddMembersDialog } from '@/components/groups/AddMembersDialog';
+import { CreateMatchDialog } from '@/components/matches/CreateMatchDialog';
 import { 
   ArrowLeft, 
   Users, 
@@ -13,7 +15,8 @@ import {
   Pencil,
   LogOut,
   Trash2,
-  UserPlus
+  UserPlus,
+  Calendar
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -69,6 +72,8 @@ const GroupDetail = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [addMembersDialogOpen, setAddMembersDialogOpen] = useState(false);
+  const [createMatchDialogOpen, setCreateMatchDialogOpen] = useState(false);
   const [newName, setNewName] = useState('');
 
   const isOwner = group?.owner_id === user?.id;
@@ -275,7 +280,12 @@ const GroupDetail = () => {
             Members
           </h2>
           {isOwner && (
-            <Button size="sm" variant="outline" className="gap-1">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="gap-1"
+              onClick={() => setAddMembersDialogOpen(true)}
+            >
               <UserPlus className="w-4 h-4" />
               Add
             </Button>
@@ -329,7 +339,11 @@ const GroupDetail = () => {
           <h2 className="font-display text-lg font-semibold text-foreground">
             Matches
           </h2>
-          <Button size="sm" className="gap-1 gradient-primary text-primary-foreground">
+          <Button 
+            size="sm" 
+            className="gap-1 gradient-primary text-primary-foreground"
+            onClick={() => setCreateMatchDialogOpen(true)}
+          >
             + New Match
           </Button>
         </div>
@@ -421,6 +435,23 @@ const GroupDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Members Dialog */}
+      <AddMembersDialog
+        open={addMembersDialogOpen}
+        onOpenChange={setAddMembersDialogOpen}
+        groupId={groupId!}
+        existingMemberIds={members.map(m => m.user_id)}
+        onMembersAdded={fetchGroupDetails}
+      />
+
+      {/* Create Match Dialog */}
+      <CreateMatchDialog
+        open={createMatchDialogOpen}
+        onOpenChange={setCreateMatchDialogOpen}
+        groupId={groupId!}
+        onMatchCreated={fetchGroupDetails}
+      />
     </div>
   );
 };
