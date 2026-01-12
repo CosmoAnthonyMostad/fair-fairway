@@ -6,6 +6,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { AddMembersDialog } from '@/components/groups/AddMembersDialog';
 import { CreateMatchDialog } from '@/components/matches/CreateMatchDialog';
+import { TeamSetupDialog } from '@/components/matches/TeamSetupDialog';
+import { ScoreEntryDialog } from '@/components/matches/ScoreEntryDialog';
+import { MatchCard } from '@/components/matches/MatchCard';
 import { 
   ArrowLeft, 
   Users, 
@@ -16,7 +19,6 @@ import {
   LogOut,
   Trash2,
   UserPlus,
-  Calendar
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -60,6 +62,18 @@ interface GroupDetails {
   created_at: string;
 }
 
+interface Match {
+  id: string;
+  format: string;
+  holes_played: number;
+  match_date: string;
+  status: string;
+  course_name?: string;
+  course_city?: string;
+  course_state?: string;
+  has_teams?: boolean;
+}
+
 const GroupDetail = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
@@ -68,12 +82,16 @@ const GroupDetail = () => {
   
   const [group, setGroup] = useState<GroupDetails | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [addMembersDialogOpen, setAddMembersDialogOpen] = useState(false);
   const [createMatchDialogOpen, setCreateMatchDialogOpen] = useState(false);
+  const [teamSetupMatchId, setTeamSetupMatchId] = useState<string | null>(null);
+  const [teamSetupFormat, setTeamSetupFormat] = useState<string>('stroke');
+  const [scoreEntryMatchId, setScoreEntryMatchId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
 
   const isOwner = group?.owner_id === user?.id;
@@ -82,7 +100,6 @@ const GroupDetail = () => {
     if (!groupId) return;
 
     try {
-      // Fetch group info
       const { data: groupData, error: groupError } = await supabase
         .from('groups')
         .select('*')
@@ -107,7 +124,6 @@ const GroupDetail = () => {
 
       if (membersError) throw membersError;
 
-      // Fetch profiles for members
       const userIds = (membersData || []).map(m => m.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -128,6 +144,38 @@ const GroupDetail = () => {
       });
 
       setMembers(membersList);
+
+      // Fetch matches with course info
+      const { data: matchesData, error: matchesError } = await supabase
+        .from('matches')
+        .select('*, courses(name, city, state)')
+        .eq('group_id', groupId)
+        .order('match_date', { ascending: false });
+
+      if (matchesError) throw matchesError;
+
+      // Check which matches have teams
+      const matchIds = (matchesData || []).map(m => m.id);
+      const { data: teamsData } = await supabase
+        .from('teams')
+        .select('match_id')
+        .in('match_id', matchIds);
+
+      const matchesWithTeams = new Set((teamsData || []).map(t => t.match_id));
+
+      const matchesList = (matchesData || []).map(match => ({
+        id: match.id,
+        format: match.format,
+        holes_played: match.holes_played || 18,
+        match_date: match.match_date,
+        status: match.status,
+        course_name: (match.courses as any)?.name,
+        course_city: (match.courses as any)?.city,
+        course_state: (match.courses as any)?.state,
+        has_teams: matchesWithTeams.has(match.id),
+      }));
+
+      setMatches(matchesList);
     } catch (error: any) {
       console.error('Error fetching group:', error);
       toast({ title: 'Error', description: 'Failed to load group', variant: 'destructive' });
@@ -136,68 +184,56 @@ const GroupDetail = () => {
     }
   };
 
+  const handleMatchClick = (match: Match) => {
+    if (!match.has_teams) {
+      setTeamSetupMatchId(match.id);
+      setTeamSetupFormat(match.format);
+    } else if (match.status !== 'completed') {
+      setScoreEntryMatchId(match.id);
+    }
+  };
+
   const handleRename = async () => {
     if (!groupId || !newName.trim()) return;
-
     try {
       const { error } = await supabase
         .from('groups')
         .update({ name: newName.trim() })
         .eq('id', groupId);
-
       if (error) throw error;
-
       toast({ title: 'Success', description: 'Group renamed successfully' });
       setRenameDialogOpen(false);
       fetchGroupDetails();
     } catch (error: any) {
-      console.error('Error renaming group:', error);
       toast({ title: 'Error', description: 'Failed to rename group', variant: 'destructive' });
     }
   };
 
   const handleDelete = async () => {
     if (!groupId) return;
-
     try {
-      // First delete all members
-      await supabase
-        .from('group_members')
-        .delete()
-        .eq('group_id', groupId);
-
-      // Then delete the group
-      const { error } = await supabase
-        .from('groups')
-        .delete()
-        .eq('id', groupId);
-
+      await supabase.from('group_members').delete().eq('group_id', groupId);
+      const { error } = await supabase.from('groups').delete().eq('id', groupId);
       if (error) throw error;
-
       toast({ title: 'Success', description: 'Group deleted successfully' });
       navigate('/groups');
     } catch (error: any) {
-      console.error('Error deleting group:', error);
       toast({ title: 'Error', description: 'Failed to delete group', variant: 'destructive' });
     }
   };
 
   const handleLeave = async () => {
     if (!groupId || !user) return;
-
     try {
       const { error } = await supabase
         .from('group_members')
         .delete()
         .eq('group_id', groupId)
         .eq('user_id', user.id);
-
       if (error) throw error;
-
       toast({ title: 'Success', description: 'You have left the group' });
       navigate('/groups');
     } catch (error: any) {
-      console.error('Error leaving group:', error);
       toast({ title: 'Error', description: 'Failed to leave group', variant: 'destructive' });
     }
   };
@@ -214,30 +250,19 @@ const GroupDetail = () => {
     );
   }
 
-  if (!group) {
-    return null;
-  }
+  if (!group) return null;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="gradient-primary px-4 py-4 flex items-center gap-3">
-        <button
-          onClick={() => navigate('/groups')}
-          className="p-2 rounded-full hover:bg-primary-foreground/10 transition-colors"
-        >
+        <button onClick={() => navigate('/groups')} className="p-2 rounded-full hover:bg-primary-foreground/10 transition-colors">
           <ArrowLeft className="w-6 h-6 text-primary-foreground" />
         </button>
-        
         <div className="flex-1 min-w-0">
-          <h1 className="font-display text-xl font-bold text-primary-foreground truncate">
-            {group.name}
-          </h1>
-          <p className="text-primary-foreground/80 text-sm">
-            {members.length} {members.length === 1 ? 'member' : 'members'}
-          </p>
+          <h1 className="font-display text-xl font-bold text-primary-foreground truncate">{group.name}</h1>
+          <p className="text-primary-foreground/80 text-sm">{members.length} {members.length === 1 ? 'member' : 'members'}</p>
         </div>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="p-2 rounded-full hover:bg-primary-foreground/10 transition-colors">
@@ -247,211 +272,94 @@ const GroupDetail = () => {
           <DropdownMenuContent align="end" className="w-48">
             {isOwner ? (
               <>
-                <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Rename Group
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}><Pencil className="w-4 h-4 mr-2" />Rename Group</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => setDeleteDialogOpen(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Group
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-destructive"><Trash2 className="w-4 h-4 mr-2" />Delete Group</DropdownMenuItem>
               </>
             ) : (
-              <DropdownMenuItem 
-                onClick={() => setLeaveDialogOpen(true)}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Leave Group
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLeaveDialogOpen(true)} className="text-destructive"><LogOut className="w-4 h-4 mr-2" />Leave Group</DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
 
-      {/* Members Section */}
+      {/* Members */}
       <section className="px-4 py-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-lg font-semibold text-foreground">
-            Members
-          </h2>
-          {isOwner && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="gap-1"
-              onClick={() => setAddMembersDialogOpen(true)}
-            >
-              <UserPlus className="w-4 h-4" />
-              Add
-            </Button>
-          )}
+          <h2 className="font-display text-lg font-semibold text-foreground">Members</h2>
+          {isOwner && <Button size="sm" variant="outline" onClick={() => setAddMembersDialogOpen(true)}><UserPlus className="w-4 h-4 mr-1" />Add</Button>}
         </div>
-
         <div className="space-y-2">
           {members.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border"
-            >
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                {member.avatar_url ? (
-                  <img
-                    src={member.avatar_url}
-                    alt={member.display_name || 'Member'}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="w-5 h-5 text-muted-foreground" />
-                )}
+            <div key={member.id} className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-muted-foreground" />}
               </div>
-              
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-foreground truncate">
-                    {member.display_name || 'Anonymous'}
-                  </p>
-                  {member.user_id === group.owner_id && (
-                    <Crown className="w-4 h-4 text-accent flex-shrink-0" />
-                  )}
-                  {member.user_id === user?.id && (
-                    <span className="text-xs text-muted-foreground">(You)</span>
-                  )}
+                  <p className="font-medium text-foreground truncate">{member.display_name || 'Anonymous'}</p>
+                  {member.user_id === group.owner_id && <Crown className="w-4 h-4 text-accent flex-shrink-0" />}
+                  {member.user_id === user?.id && <span className="text-xs text-muted-foreground">(You)</span>}
                 </div>
-                {member.gsi !== null && (
-                  <p className="text-sm text-muted-foreground">
-                    GSI: {member.gsi}
-                  </p>
-                )}
+                {member.gsi !== null && <p className="text-sm text-muted-foreground">GSI: {member.gsi}</p>}
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Matches Section */}
+      {/* Matches */}
       <section className="px-4 py-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-lg font-semibold text-foreground">
-            Matches
-          </h2>
-          <Button 
-            size="sm" 
-            className="gap-1 gradient-primary text-primary-foreground"
-            onClick={() => setCreateMatchDialogOpen(true)}
-          >
-            + New Match
-          </Button>
+          <h2 className="font-display text-lg font-semibold text-foreground">Matches</h2>
+          <Button size="sm" className="gradient-primary text-primary-foreground" onClick={() => setCreateMatchDialogOpen(true)}>+ New Match</Button>
         </div>
-
-        <div className="bg-card rounded-lg border border-border p-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-            <Users className="w-8 h-8 text-muted-foreground" />
+        {matches.length > 0 ? (
+          <div className="space-y-2">
+            {matches.map((match) => (
+              <MatchCard key={match.id} match={match} onClick={() => handleMatchClick(match)} />
+            ))}
           </div>
-          <p className="text-muted-foreground">
-            No matches yet. Create your first match!
-          </p>
-        </div>
+        ) : (
+          <div className="bg-card rounded-lg border border-border p-8 text-center">
+            <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">No matches yet. Create your first match!</p>
+          </div>
+        )}
       </section>
 
-      {/* Rename Dialog */}
+      {/* Dialogs */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Group</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Rename Group</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-name">Group Name</Label>
-              <Input
-                id="new-name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Enter new name"
-              />
-            </div>
+            <div className="space-y-2"><Label>Group Name</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setRenameDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 gradient-primary text-primary-foreground"
-                onClick={handleRename}
-                disabled={!newName.trim()}
-              >
-                Save
-              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => setRenameDialogOpen(false)}>Cancel</Button>
+              <Button className="flex-1 gradient-primary text-primary-foreground" onClick={handleRename} disabled={!newName.trim()}>Save</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Group?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete "{group.name}" and all its match history. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Delete Group?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{group.name}" and all its match history.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Leave Confirmation */}
       <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Leave Group?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to leave "{group.name}"? You'll need to be invited again to rejoin.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleLeave}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Leave
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Leave Group?</AlertDialogTitle><AlertDialogDescription>You'll need to be invited again to rejoin.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleLeave} className="bg-destructive text-destructive-foreground">Leave</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Add Members Dialog */}
-      <AddMembersDialog
-        open={addMembersDialogOpen}
-        onOpenChange={setAddMembersDialogOpen}
-        groupId={groupId!}
-        existingMemberIds={members.map(m => m.user_id)}
-        onMembersAdded={fetchGroupDetails}
-      />
-
-      {/* Create Match Dialog */}
-      <CreateMatchDialog
-        open={createMatchDialogOpen}
-        onOpenChange={setCreateMatchDialogOpen}
-        groupId={groupId!}
-        onMatchCreated={fetchGroupDetails}
-      />
+      <AddMembersDialog open={addMembersDialogOpen} onOpenChange={setAddMembersDialogOpen} groupId={groupId!} existingMemberIds={members.map(m => m.user_id)} onMembersAdded={fetchGroupDetails} />
+      <CreateMatchDialog open={createMatchDialogOpen} onOpenChange={setCreateMatchDialogOpen} groupId={groupId!} onMatchCreated={fetchGroupDetails} />
+      <TeamSetupDialog open={!!teamSetupMatchId} onOpenChange={(open) => !open && setTeamSetupMatchId(null)} matchId={teamSetupMatchId || ''} groupId={groupId!} format={teamSetupFormat} onTeamsCreated={fetchGroupDetails} />
+      <ScoreEntryDialog open={!!scoreEntryMatchId} onOpenChange={(open) => !open && setScoreEntryMatchId(null)} matchId={scoreEntryMatchId || ''} onScoresUpdated={fetchGroupDetails} />
     </div>
   );
 };

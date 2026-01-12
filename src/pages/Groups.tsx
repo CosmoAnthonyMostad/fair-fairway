@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Bell, Plus, UserPlus, Users, User } from 'lucide-react';
+import { Plus, UserPlus, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGroups } from '@/hooks/useGroups';
 import { useFriends } from '@/hooks/useFriends';
+import { useNotifications } from '@/hooks/useNotifications';
 import GroupCard from '@/components/groups/GroupCard';
 import CreateGroupDialog from '@/components/groups/CreateGroupDialog';
 import FriendCard from '@/components/friends/FriendCard';
 import FriendRequestCard from '@/components/friends/FriendRequestCard';
 import FindFriendsDialog from '@/components/friends/FindFriendsDialog';
+import { NotificationsPanel } from '@/components/notifications/NotificationsPanel';
 
 const Groups = () => {
   const { groups, loading: groupsLoading, createGroup } = useGroups();
@@ -19,6 +21,14 @@ const Groups = () => {
     acceptFriendRequest,
     declineFriendRequest 
   } = useFriends();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAll,
+  } = useNotifications();
   
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [findFriendsOpen, setFindFriendsOpen] = useState(false);
@@ -32,12 +42,14 @@ const Groups = () => {
         <h1 className="font-display text-xl font-bold text-primary-foreground">
           Groups & Friends
         </h1>
-        <button className="relative p-2 rounded-full hover:bg-primary-foreground/10 transition-colors">
-          <Bell className="w-6 h-6 text-primary-foreground" />
-          {pendingRequests.length > 0 && (
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-accent rounded-full" />
-          )}
-        </button>
+        <NotificationsPanel
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onDelete={deleteNotification}
+          onClearAll={clearAll}
+        />
       </header>
 
       {/* Action buttons */}
