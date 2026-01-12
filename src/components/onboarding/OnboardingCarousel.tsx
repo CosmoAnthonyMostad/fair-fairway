@@ -13,49 +13,36 @@ const GolferIllustration = () => (
     {/* Ground/grass */}
     <ellipse cx="100" cy="185" rx="80" ry="12" className="fill-primary/20" />
     
-    {/* Golf bag in background */}
-    <rect x="25" y="100" width="18" height="70" rx="4" className="fill-foreground/20" />
-    <rect x="28" y="95" width="12" height="10" rx="2" className="fill-foreground/15" />
-    <line x1="30" y1="95" x2="30" y2="75" className="stroke-foreground/30" strokeWidth="2" />
-    <line x1="36" y1="95" x2="38" y2="70" className="stroke-foreground/25" strokeWidth="2" />
-    <line x1="33" y1="95" x2="32" y2="68" className="stroke-foreground/20" strokeWidth="2" />
-    
     {/* Golfer head */}
-    <circle cx="105" cy="48" r="22" className="fill-primary" />
-    {/* Golfer cap */}
-    <ellipse cx="105" cy="35" rx="20" ry="8" className="fill-primary-dark" />
-    <rect x="85" y="30" width="40" height="8" rx="2" className="fill-primary-dark" />
-    <rect x="100" y="26" width="25" height="6" rx="1" className="fill-primary-dark" />
+    <circle cx="100" cy="50" r="22" className="fill-primary" />
     
-    {/* Golfer torso */}
-    <path d="M80 70 L85 125 L125 125 L130 70 Z" className="fill-primary" />
-    {/* Polo collar */}
-    <path d="M92 70 L105 80 L118 70" className="fill-none stroke-primary-dark" strokeWidth="3" />
-    {/* Arm holding club */}
-    <path d="M130 80 Q150 75 155 55" className="fill-none stroke-primary" strokeWidth="12" strokeLinecap="round" />
-    <circle cx="155" cy="55" r="8" className="fill-primary" />
+    {/* Golfer torso - twisted for backswing */}
+    <path d="M78 72 L82 130 L118 130 L122 72 Z" className="fill-primary" />
     
-    {/* Golfer legs */}
-    <path d="M90 125 L82 175 L95 175 L100 125" className="fill-foreground/70" />
-    <path d="M110 125 L118 175 L131 175 L120 125" className="fill-foreground/70" />
+    {/* Left arm - across body */}
+    <path d="M78 85 Q60 95 55 110" className="fill-none stroke-primary" strokeWidth="12" strokeLinecap="round" />
+    <circle cx="55" cy="110" r="7" className="fill-primary" />
+    
+    {/* Right arm - extended back in backswing */}
+    <path d="M122 80 Q145 60 160 35" className="fill-none stroke-primary" strokeWidth="12" strokeLinecap="round" />
+    <circle cx="160" cy="35" r="7" className="fill-primary" />
+    
+    {/* Golf club - in backswing position */}
+    <line x1="160" y1="35" x2="130" y2="5" className="stroke-foreground/70" strokeWidth="3" strokeLinecap="round" />
+    <path d="M125 2 L135 8 L130 12 L120 6 Z" className="fill-foreground/70" />
+    
+    {/* Golfer legs - stance */}
+    <path d="M88 130 L75 175 L88 178 L95 130" className="fill-primary/80" />
+    <path d="M105 130 L112 175 L125 178 L118 130" className="fill-primary/80" />
+    
     {/* Shoes */}
-    <ellipse cx="88" cy="178" rx="10" ry="5" className="fill-foreground/80" />
-    <ellipse cx="124" cy="178" rx="10" ry="5" className="fill-foreground/80" />
+    <ellipse cx="82" cy="178" rx="12" ry="5" className="fill-foreground/60" />
+    <ellipse cx="118" cy="178" rx="12" ry="5" className="fill-foreground/60" />
     
-    {/* Golf club */}
-    <line x1="155" y1="55" x2="165" y2="165" className="stroke-foreground/60" strokeWidth="3" strokeLinecap="round" />
-    <path d="M160 160 L175 170 L172 175 L158 168 Z" className="fill-foreground/70" />
-    
-    {/* Golf ball */}
-    <circle cx="175" cy="175" r="8" className="fill-white" />
-    <circle cx="173" cy="173" r="1.5" className="fill-foreground/20" />
-    <circle cx="177" cy="176" r="1" className="fill-foreground/20" />
-    <circle cx="175" cy="178" r="1.2" className="fill-foreground/20" />
-    
-    {/* Flag in distance */}
-    <rect x="50" y="110" width="2" height="45" className="fill-foreground/40" />
-    <path d="M52 110 L52 125 L68 117.5 Z" className="fill-accent" />
-    <ellipse cx="51" cy="155" rx="8" ry="3" className="fill-primary/30" />
+    {/* Golf ball on ground */}
+    <circle cx="70" cy="175" r="6" className="fill-white" />
+    <circle cx="68" cy="173" r="1" className="fill-foreground/20" />
+    <circle cx="72" cy="176" r="0.8" className="fill-foreground/20" />
   </svg>
 );
 
@@ -64,105 +51,78 @@ const FriendsIllustration = () => (
     {/* Ground */}
     <ellipse cx="100" cy="188" rx="85" ry="10" className="fill-primary/20" />
     
-    {/* Left person */}
+    {/* Left person - green */}
     <circle cx="65" cy="55" r="20" className="fill-primary" />
-    {/* Hair/cap */}
-    <path d="M45 50 Q55 35 75 40 Q85 50 85 55 L45 55 Z" className="fill-primary-dark" />
     {/* Body */}
     <path d="M45 78 L48 135 L82 135 L85 78 Z" className="fill-primary" />
-    {/* Arms - waving */}
-    <path d="M45 85 Q30 80 25 65" className="fill-none stroke-primary" strokeWidth="10" strokeLinecap="round" />
-    <circle cx="25" cy="65" r="6" className="fill-primary" />
-    <path d="M85 90 Q95 95 100 105" className="fill-none stroke-primary" strokeWidth="10" strokeLinecap="round" />
+    {/* Left arm - down */}
+    <path d="M45 85 Q35 100 35 120" className="fill-none stroke-primary" strokeWidth="10" strokeLinecap="round" />
+    <circle cx="35" cy="120" r="6" className="fill-primary" />
+    {/* Right arm - reaching to shake */}
+    <path d="M85 90 Q95 95 100 100" className="fill-none stroke-primary" strokeWidth="10" strokeLinecap="round" />
     {/* Legs */}
-    <rect x="52" y="135" width="12" height="40" rx="4" className="fill-foreground/70" />
-    <rect x="68" y="135" width="12" height="40" rx="4" className="fill-foreground/70" />
+    <rect x="52" y="135" width="12" height="40" rx="4" className="fill-primary/80" />
+    <rect x="68" y="135" width="12" height="40" rx="4" className="fill-primary/80" />
     {/* Shoes */}
-    <ellipse cx="58" cy="178" rx="9" ry="5" className="fill-foreground/80" />
-    <ellipse cx="74" cy="178" rx="9" ry="5" className="fill-foreground/80" />
+    <ellipse cx="58" cy="178" rx="9" ry="5" className="fill-foreground/60" />
+    <ellipse cx="74" cy="178" rx="9" ry="5" className="fill-foreground/60" />
     
-    {/* Right person */}
+    {/* Right person - yellow/accent */}
     <circle cx="135" cy="55" r="20" className="fill-accent" />
-    {/* Hair */}
-    <path d="M120 45 Q135 30 150 45 Q155 55 150 60 L120 60 Q115 55 120 45" className="fill-accent/70" />
     {/* Body */}
     <path d="M115 78 L118 135 L152 135 L155 78 Z" className="fill-accent" />
-    {/* Arms */}
-    <path d="M115 90 Q105 95 100 105" className="fill-none stroke-accent" strokeWidth="10" strokeLinecap="round" />
-    <path d="M155 85 Q170 80 175 70" className="fill-none stroke-accent" strokeWidth="10" strokeLinecap="round" />
-    <circle cx="175" cy="70" r="6" className="fill-accent" />
+    {/* Right arm - down */}
+    <path d="M155 85 Q165 100 165 120" className="fill-none stroke-accent" strokeWidth="10" strokeLinecap="round" />
+    <circle cx="165" cy="120" r="6" className="fill-accent" />
+    {/* Left arm - reaching to shake */}
+    <path d="M115 90 Q105 95 100 100" className="fill-none stroke-accent" strokeWidth="10" strokeLinecap="round" />
     {/* Legs */}
-    <rect x="122" y="135" width="12" height="40" rx="4" className="fill-foreground/60" />
-    <rect x="138" y="135" width="12" height="40" rx="4" className="fill-foreground/60" />
+    <rect x="122" y="135" width="12" height="40" rx="4" className="fill-accent/80" />
+    <rect x="138" y="135" width="12" height="40" rx="4" className="fill-accent/80" />
     {/* Shoes */}
-    <ellipse cx="128" cy="178" rx="9" ry="5" className="fill-foreground/70" />
-    <ellipse cx="144" cy="178" rx="9" ry="5" className="fill-foreground/70" />
+    <ellipse cx="128" cy="178" rx="9" ry="5" className="fill-foreground/50" />
+    <ellipse cx="144" cy="178" rx="9" ry="5" className="fill-foreground/50" />
     
-    {/* Connection - high five effect */}
-    <circle cx="100" cy="105" r="12" className="fill-accent/30" />
-    <circle cx="100" cy="105" r="8" className="fill-primary/40" />
-    {/* Sparkles around high five */}
-    <circle cx="90" cy="95" r="2" className="fill-accent/60" />
-    <circle cx="110" cy="98" r="2.5" className="fill-primary/60" />
-    <circle cx="95" cy="115" r="2" className="fill-primary/50" />
-    <circle cx="108" cy="112" r="1.5" className="fill-accent/50" />
-    
-    {/* Golf balls at feet */}
-    <circle cx="42" cy="182" r="5" className="fill-white" />
-    <circle cx="160" cy="182" r="5" className="fill-white" />
+    {/* Handshake - two hands meeting */}
+    <circle cx="100" cy="105" r="8" className="fill-primary" />
+    <circle cx="100" cy="105" r="8" className="fill-accent" style={{ clipPath: 'inset(0 50% 0 0)' }} />
   </svg>
 );
 
-const TrophyIllustration = () => (
+const PaperPencilIllustration = () => (
   <svg viewBox="0 0 200 200" className="w-full h-full">
-    {/* Pedestal/base shadow */}
-    <ellipse cx="100" cy="185" rx="70" ry="10" className="fill-foreground/10" />
+    {/* Paper shadow */}
+    <rect x="45" y="35" width="120" height="150" rx="4" className="fill-foreground/10" transform="translate(4, 4)" />
     
-    {/* Trophy cup */}
-    <path d="M60 45 L68 105 L132 105 L140 45 Z" className="fill-accent" />
-    <ellipse cx="100" cy="45" rx="40" ry="10" className="fill-accent" />
-    {/* Inner cup shadow */}
-    <ellipse cx="100" cy="48" rx="30" ry="7" className="fill-accent/70" />
+    {/* Paper */}
+    <rect x="45" y="35" width="120" height="150" rx="4" className="fill-white" />
+    <rect x="45" y="35" width="120" height="150" rx="4" className="fill-none stroke-foreground/20" strokeWidth="2" />
     
-    {/* Trophy handles - more detailed */}
-    <path d="M58 55 C25 55 20 90 55 100" className="fill-none stroke-accent" strokeWidth="10" strokeLinecap="round" />
-    <path d="M142 55 C175 55 180 90 145 100" className="fill-none stroke-accent" strokeWidth="10" strokeLinecap="round" />
-    {/* Handle inner detail */}
-    <path d="M55 60 C35 60 32 85 52 92" className="fill-none stroke-accent/50" strokeWidth="4" strokeLinecap="round" />
-    <path d="M145 60 C165 60 168 85 148 92" className="fill-none stroke-accent/50" strokeWidth="4" strokeLinecap="round" />
+    {/* Paper fold corner */}
+    <path d="M145 35 L165 35 L165 55 Z" className="fill-muted" />
+    <path d="M145 35 L145 55 L165 55" className="fill-none stroke-foreground/20" strokeWidth="1" />
     
-    {/* Trophy neck */}
-    <rect x="88" y="105" width="24" height="25" className="fill-primary" />
-    {/* Decorative rings on neck */}
-    <rect x="85" y="108" width="30" height="4" rx="1" className="fill-primary-dark" />
-    <rect x="85" y="122" width="30" height="4" rx="1" className="fill-primary-dark" />
+    {/* Scribble lines - like handwriting */}
+    <path d="M60 60 Q80 55 100 60 Q120 65 140 58" className="fill-none stroke-primary" strokeWidth="3" strokeLinecap="round" />
+    <path d="M60 80 Q85 75 110 82 Q130 88 145 78" className="fill-none stroke-primary/70" strokeWidth="3" strokeLinecap="round" />
+    <path d="M60 100 Q75 95 95 102 Q115 108 130 98" className="fill-none stroke-primary" strokeWidth="3" strokeLinecap="round" />
+    <path d="M60 120 Q90 115 120 122 Q140 128 150 118" className="fill-none stroke-primary/70" strokeWidth="3" strokeLinecap="round" />
+    <path d="M60 140 Q80 135 100 142 Q115 148 125 140" className="fill-none stroke-primary" strokeWidth="3" strokeLinecap="round" />
+    <path d="M60 160 Q70 155 85 162" className="fill-none stroke-primary/70" strokeWidth="3" strokeLinecap="round" />
     
-    {/* Trophy base layers */}
-    <rect x="72" y="130" width="56" height="12" rx="3" className="fill-primary" />
-    <rect x="65" y="142" width="70" height="10" rx="3" className="fill-primary-dark" />
-    <rect x="58" y="152" width="84" height="14" rx="4" className="fill-foreground/80" />
-    {/* Base plate */}
-    <rect x="55" y="166" width="90" height="8" rx="2" className="fill-foreground/60" />
-    
-    {/* Star on trophy */}
-    <path d="M100 58 L104 70 L117 70 L107 78 L111 91 L100 83 L89 91 L93 78 L83 70 L96 70 Z" className="fill-white" />
-    
-    {/* Number 1 */}
-    <text x="100" y="162" textAnchor="middle" className="fill-white font-bold text-sm" style={{ fontSize: '10px' }}>1st</text>
-    
-    {/* Sparkles and celebration */}
-    <circle cx="35" cy="40" r="4" className="fill-accent/50" />
-    <circle cx="165" cy="35" r="5" className="fill-primary/50" />
-    <circle cx="170" cy="120" r="3" className="fill-accent/40" />
-    <circle cx="25" cy="110" r="4" className="fill-primary/40" />
-    <circle cx="45" cy="70" r="2.5" className="fill-accent/60" />
-    <circle cx="160" cy="75" r="3" className="fill-primary/60" />
-    
-    {/* Confetti pieces */}
-    <rect x="30" y="55" width="6" height="3" rx="1" className="fill-primary/50" transform="rotate(25 33 56)" />
-    <rect x="165" y="50" width="6" height="3" rx="1" className="fill-accent/50" transform="rotate(-20 168 51)" />
-    <rect x="40" y="130" width="5" height="2.5" rx="1" className="fill-accent/40" transform="rotate(15 42 131)" />
-    <rect x="155" y="135" width="5" height="2.5" rx="1" className="fill-primary/40" transform="rotate(-30 157 136)" />
+    {/* Pencil */}
+    <g transform="translate(130, 120) rotate(35)">
+      {/* Pencil body */}
+      <rect x="0" y="0" width="60" height="12" className="fill-accent" />
+      {/* Pencil wood/tip */}
+      <path d="M60 0 L75 6 L60 12 Z" className="fill-accent/60" />
+      {/* Pencil point */}
+      <path d="M72 4 L80 6 L72 8 Z" className="fill-foreground/70" />
+      {/* Pencil eraser */}
+      <rect x="-8" y="1" width="10" height="10" rx="1" className="fill-primary/60" />
+      {/* Pencil metal band */}
+      <rect x="-2" y="0" width="4" height="12" className="fill-foreground/30" />
+    </g>
   </svg>
 );
 
@@ -200,7 +160,7 @@ const OnboardingCarousel = ({ onComplete }: OnboardingCarouselProps) => {
     {
       title: "Track Matches & Build Fair Handicaps",
       description: "Record your matches and let the app calculate fair handicaps that improve over time.",
-      illustration: <TrophyIllustration />,
+      illustration: <PaperPencilIllustration />,
     },
   ];
 
