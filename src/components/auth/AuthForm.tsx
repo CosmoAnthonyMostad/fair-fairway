@@ -57,9 +57,6 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
         <div className="absolute top-1/3 -left-32 w-96 h-96 rounded-full bg-primary-dark/30 blur-3xl" />
         
-        {/* White fade on green background - bottom right */}
-        <div className="absolute bottom-0 right-0 w-[80%] h-[60%] bg-gradient-to-tl from-white/30 via-white/10 to-transparent blur-2xl" />
-        
         {/* Subtle golf-themed decorative elements */}
         <svg className="absolute bottom-0 left-0 w-full h-48 opacity-10" viewBox="0 0 400 200" fill="none">
           <path d="M0 150 Q100 100 200 150 T400 150 L400 200 L0 200 Z" fill="currentColor" className="text-primary-foreground" />
