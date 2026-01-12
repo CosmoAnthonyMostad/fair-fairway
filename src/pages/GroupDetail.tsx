@@ -150,7 +150,7 @@ const GroupDetail = () => {
         .from('matches')
         .select('*, courses(name, city, state)')
         .eq('group_id', groupId)
-        .order('match_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (matchesError) throw matchesError;
 
