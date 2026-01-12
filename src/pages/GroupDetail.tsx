@@ -76,6 +76,11 @@ interface Match {
   winner_names?: string[];
 }
 
+interface DeleteMatchState {
+  id: string;
+  courseName: string;
+}
+
 const GroupDetail = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
@@ -95,6 +100,7 @@ const GroupDetail = () => {
   const [teamSetupFormat, setTeamSetupFormat] = useState<string>('stroke');
   const [matchDetailId, setMatchDetailId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [deleteMatchState, setDeleteMatchState] = useState<DeleteMatchState | null>(null);
 
   const isOwner = group?.owner_id === user?.id;
 
@@ -281,6 +287,40 @@ const GroupDetail = () => {
     }
   };
 
+  const handleDeleteMatch = async () => {
+    if (!deleteMatchState) return;
+    
+    try {
+      // Delete team_players first (via teams)
+      const { data: teams } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('match_id', deleteMatchState.id);
+      
+      if (teams && teams.length > 0) {
+        const teamIds = teams.map(t => t.id);
+        await supabase.from('team_players').delete().in('team_id', teamIds);
+        await supabase.from('teams').delete().eq('match_id', deleteMatchState.id);
+      }
+      
+      // Delete the match
+      const { error } = await supabase.from('matches').delete().eq('id', deleteMatchState.id);
+      if (error) throw error;
+      
+      toast({ title: 'Success', description: 'Match deleted successfully' });
+      setDeleteMatchState(null);
+      fetchGroupDetails();
+    } catch (error: any) {
+      console.error('Error deleting match:', error);
+      toast({ title: 'Error', description: 'Failed to delete match', variant: 'destructive' });
+    }
+  };
+
+  const handleMatchDelete = (match: Match, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteMatchState({ id: match.id, courseName: match.course_name || 'Unknown Course' });
+  };
+
   useEffect(() => {
     fetchGroupDetails();
   }, [groupId]);
@@ -365,7 +405,12 @@ const GroupDetail = () => {
         {matches.length > 0 ? (
           <div className="space-y-2">
             {matches.map((match) => (
-              <MatchCard key={match.id} match={match} onClick={() => handleMatchClick(match)} />
+              <MatchCard 
+                key={match.id} 
+                match={match} 
+                onClick={() => handleMatchClick(match)}
+                onDelete={(e) => handleMatchDelete(match, e)}
+              />
             ))}
           </div>
         ) : (
@@ -401,6 +446,23 @@ const GroupDetail = () => {
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Leave Group?</AlertDialogTitle><AlertDialogDescription>You'll need to be invited again to rejoin.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleLeave} className="bg-destructive text-destructive-foreground">Leave</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteMatchState} onOpenChange={(open) => !open && setDeleteMatchState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Match?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the match at "{deleteMatchState?.courseName}" and all its scores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMatch} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 

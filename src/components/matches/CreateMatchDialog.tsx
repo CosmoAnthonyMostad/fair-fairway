@@ -19,7 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, MapPin, Users, Trophy } from 'lucide-react';
+import { Search, MapPin, Users, Trophy, Pencil } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import {
   calculateCourseHandicap,
   calculatePartialHandicap,
@@ -53,6 +54,11 @@ interface GroupMember {
 interface TeamSlot {
   teamNumber: number;
   players: (string | null)[]; // Array of player user_ids, null = empty slot
+}
+
+interface HandicapOverride {
+  teamNumber: number;
+  strokes: number;
 }
 
 interface CreateMatchDialogProps {
@@ -108,6 +114,10 @@ export const CreateMatchDialog = ({
   // Team-based selection
   const [numPlayers, setNumPlayers] = useState('2'); // For stroke play
   const [teams, setTeams] = useState<TeamSlot[]>([]);
+  
+  // Handicap override
+  const [useHandicapOverride, setUseHandicapOverride] = useState(false);
+  const [handicapOverrides, setHandicapOverrides] = useState<HandicapOverride[]>([]);
 
   const fetchCourses = async () => {
     try {
@@ -338,15 +348,24 @@ export const CreateMatchDialog = ({
         }))
         .filter(team => team.players.length > 0);
 
-      // Calculate course handicaps for each team
+      // Calculate course handicaps for each team (or use overrides)
       const teamHandicaps = teamsToCreate.map(team => getTeamCourseHandicap(team.players));
-      const matchStrokes = calculateMatchStrokes(teamHandicaps);
+      const calculatedStrokes = calculateMatchStrokes(teamHandicaps);
+
+      // Use overrides if enabled, otherwise use calculated
+      const finalStrokes = useHandicapOverride
+        ? teamsToCreate.map(team => {
+            const override = handicapOverrides.find(o => o.teamNumber === team.teamNumber);
+            return override?.strokes ?? 0;
+          })
+        : calculatedStrokes;
 
       // Insert teams
       const teamInserts = teamsToCreate.map((team, index) => ({
         match_id: match.id,
         team_number: team.teamNumber,
-        handicap_strokes: matchStrokes[index],
+        handicap_strokes: finalStrokes[index],
+        handicap_override: useHandicapOverride,
       }));
 
       const { data: createdTeams, error: teamsError } = await supabase
@@ -409,6 +428,32 @@ export const CreateMatchDialog = ({
     initializeTeams('stroke_play', parseInt(value));
   };
 
+  // Initialize handicap overrides when preview updates
+  useEffect(() => {
+    if (handicapPreview && handicapPreview.length > 0 && !useHandicapOverride) {
+      setHandicapOverrides(
+        handicapPreview.map(t => ({ teamNumber: t.teamNumber, strokes: t.strokes }))
+      );
+    }
+  }, [handicapPreview]);
+
+  // Reset override when toggle is turned off
+  const handleOverrideToggle = (enabled: boolean) => {
+    setUseHandicapOverride(enabled);
+    if (!enabled && handicapPreview) {
+      setHandicapOverrides(
+        handicapPreview.map(t => ({ teamNumber: t.teamNumber, strokes: t.strokes }))
+      );
+    }
+  };
+
+  // Update a single override value
+  const updateOverride = (teamNumber: number, strokes: number) => {
+    setHandicapOverrides(prev =>
+      prev.map(o => (o.teamNumber === teamNumber ? { ...o, strokes } : o))
+    );
+  };
+
   useEffect(() => {
     if (open) {
       fetchCourses();
@@ -426,6 +471,8 @@ export const CreateMatchDialog = ({
       setMatchDate(new Date().toISOString().split('T')[0]);
       setNumPlayers('2');
       setTeams([]);
+      setUseHandicapOverride(false);
+      setHandicapOverrides([]);
     }
   }, [open]);
 
@@ -657,22 +704,68 @@ export const CreateMatchDialog = ({
           {/* Handicap Preview */}
           {handicapPreview && handicapPreview.length > 0 && (
             <div className="border border-border rounded-lg p-3 bg-secondary/50">
-              <div className="flex items-center gap-2 mb-2">
-                <Trophy className="w-4 h-4 text-primary" />
-                <p className="text-sm font-medium text-foreground">Handicap Strokes</p>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-medium text-foreground">Handicap Strokes</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="override-toggle" className="text-xs text-muted-foreground cursor-pointer">
+                    <Pencil className="w-3 h-3 inline mr-1" />
+                    Override
+                  </Label>
+                  <Switch
+                    id="override-toggle"
+                    checked={useHandicapOverride}
+                    onCheckedChange={handleOverrideToggle}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                {handicapPreview.map((team) => (
-                  <div key={team.teamNumber}>
-                    <p className="font-semibold text-foreground">
-                      {isTeamFormat ? `Team ${team.teamNumber}` : `Player ${team.teamNumber}`}: {team.strokes === 0 ? '0 strokes' : `+${team.strokes} strokes`}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {team.playerNames.join(', ')}
-                    </p>
-                  </div>
-                ))}
+              
+              <div className="space-y-3">
+                {handicapPreview.map((team) => {
+                  const override = handicapOverrides.find(o => o.teamNumber === team.teamNumber);
+                  const displayStrokes = useHandicapOverride ? (override?.strokes ?? 0) : team.strokes;
+                  
+                  return (
+                    <div key={team.teamNumber} className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">
+                          {isTeamFormat ? `Team ${team.teamNumber}` : `Player ${team.teamNumber}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {team.playerNames.join(', ')}
+                        </p>
+                      </div>
+                      
+                      {useHandicapOverride ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm text-muted-foreground">+</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="54"
+                            className="w-16 h-8 text-center"
+                            value={override?.strokes ?? 0}
+                            onChange={(e) => updateOverride(team.teamNumber, parseInt(e.target.value) || 0)}
+                          />
+                          <span className="text-sm text-muted-foreground">strokes</span>
+                        </div>
+                      ) : (
+                        <span className="font-semibold text-foreground">
+                          {displayStrokes === 0 ? '0' : `+${displayStrokes}`} strokes
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+              
+              {useHandicapOverride && (
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Custom handicaps will be used instead of calculated values
+                </p>
+              )}
             </div>
           )}
 
