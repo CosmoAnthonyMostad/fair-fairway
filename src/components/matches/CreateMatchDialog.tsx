@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -18,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, MapPin } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Search, MapPin, Users } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -30,6 +32,16 @@ interface Course {
   slope_rating: number;
 }
 
+interface GroupMember {
+  user_id: string;
+  profile: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    phi: number | null;
+  } | null;
+}
+
 interface CreateMatchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -37,12 +49,13 @@ interface CreateMatchDialogProps {
   onMatchCreated: () => void;
 }
 
+// Match these to the database constraint: '2v2_scramble', 'stroke_play', 'match_play', 'best_ball', 'shamble'
 const MATCH_FORMATS = [
-  { value: 'stroke', label: 'Stroke Play' },
-  { value: 'match', label: 'Match Play' },
-  { value: 'scramble', label: 'Scramble' },
+  { value: 'stroke_play', label: 'Stroke Play' },
+  { value: 'match_play', label: 'Match Play' },
+  { value: '2v2_scramble', label: '2v2 Scramble' },
   { value: 'best_ball', label: 'Best Ball' },
-  { value: 'alternate_shot', label: 'Alternate Shot' },
+  { value: 'shamble', label: 'Shamble' },
 ];
 
 const HOLES_OPTIONS = [
@@ -63,10 +76,15 @@ export const CreateMatchDialog = ({
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [courseSearch, setCourseSearch] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [format, setFormat] = useState('stroke');
+  const [format, setFormat] = useState('stroke_play');
   const [holesPlayed, setHolesPlayed] = useState('18');
   const [matchDate, setMatchDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Player selection state
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
 
   const fetchCourses = async () => {
     try {
@@ -84,17 +102,73 @@ export const CreateMatchDialog = ({
     }
   };
 
+  const fetchGroupMembers = async () => {
+    try {
+      // Fetch members first
+      const { data: membersData, error: membersError } = await supabase
+        .from('group_members')
+        .select('user_id')
+        .eq('group_id', groupId);
+
+      if (membersError) throw membersError;
+
+      const userIds = (membersData || []).map(m => m.user_id);
+      
+      if (userIds.length === 0) {
+        setGroupMembers([]);
+        return;
+      }
+
+      // Fetch profiles separately
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, display_name, avatar_url, phi')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      const combined = (membersData || []).map(m => ({
+        user_id: m.user_id,
+        profile: profilesData?.find(p => p.user_id === m.user_id) || null,
+      }));
+
+      setGroupMembers(combined as GroupMember[]);
+    } catch (error) {
+      console.error('Error fetching group members:', error);
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
   const filteredCourses = courses.filter(course =>
     course.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
     course.city?.toLowerCase().includes(courseSearch.toLowerCase()) ||
     course.state?.toLowerCase().includes(courseSearch.toLowerCase())
   );
 
+  const togglePlayer = (userId: string) => {
+    setSelectedPlayers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
   const handleSubmit = async () => {
     if (!selectedCourse || !user) return;
 
+    if (selectedPlayers.length < 2) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least 2 players for the match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      // Create the match
       const { data: match, error } = await supabase
         .from('matches')
         .insert({
@@ -111,9 +185,73 @@ export const CreateMatchDialog = ({
 
       if (error) throw error;
 
+      // Create teams for the match based on format
+      // For 2v2 formats, create 2 teams with 2 players each
+      // For individual formats, create a team per player
+      const isTeamFormat = format === '2v2_scramble' || format === 'best_ball' || format === 'shamble';
+      
+      if (isTeamFormat && selectedPlayers.length >= 4) {
+        // Create 2 teams
+        const { data: teams, error: teamsError } = await supabase
+          .from('teams')
+          .insert([
+            { match_id: match.id, team_number: 1 },
+            { match_id: match.id, team_number: 2 },
+          ])
+          .select();
+
+        if (teamsError) throw teamsError;
+
+        // Split players into teams (first half team 1, second half team 2)
+        const halfPoint = Math.ceil(selectedPlayers.length / 2);
+        const team1Players = selectedPlayers.slice(0, halfPoint);
+        const team2Players = selectedPlayers.slice(halfPoint);
+
+        const playerInserts = [
+          ...team1Players.map(userId => ({
+            team_id: teams![0].id,
+            user_id: userId,
+          })),
+          ...team2Players.map(userId => ({
+            team_id: teams![1].id,
+            user_id: userId,
+          })),
+        ];
+
+        const { error: playersError } = await supabase
+          .from('team_players')
+          .insert(playerInserts);
+
+        if (playersError) throw playersError;
+      } else {
+        // Individual format or not enough for teams - each player gets their own team
+        const teamInserts = selectedPlayers.map((_, index) => ({
+          match_id: match.id,
+          team_number: index + 1,
+        }));
+
+        const { data: teams, error: teamsError } = await supabase
+          .from('teams')
+          .insert(teamInserts)
+          .select();
+
+        if (teamsError) throw teamsError;
+
+        const playerInserts = selectedPlayers.map((userId, index) => ({
+          team_id: teams![index].id,
+          user_id: userId,
+        }));
+
+        const { error: playersError } = await supabase
+          .from('team_players')
+          .insert(playerInserts);
+
+        if (playersError) throw playersError;
+      }
+
       toast({
         title: 'Success',
-        description: 'Match created! Now set up teams and handicaps.',
+        description: 'Match created with players assigned!',
       });
 
       onOpenChange(false);
@@ -133,16 +271,22 @@ export const CreateMatchDialog = ({
   useEffect(() => {
     if (open) {
       fetchCourses();
+      fetchGroupMembers();
+      // Auto-select current user
+      if (user) {
+        setSelectedPlayers([user.id]);
+      }
     }
-  }, [open]);
+  }, [open, user]);
 
   useEffect(() => {
     if (!open) {
       setSelectedCourse(null);
       setCourseSearch('');
-      setFormat('stroke');
+      setFormat('stroke_play');
       setHolesPlayed('18');
       setMatchDate(new Date().toISOString().split('T')[0]);
+      setSelectedPlayers([]);
     }
   }, [open]);
 
@@ -218,6 +362,55 @@ export const CreateMatchDialog = ({
             )}
           </div>
 
+          {/* Player Selection */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Players ({selectedPlayers.length} selected)
+            </Label>
+            <div className="max-h-40 overflow-y-auto space-y-2 border border-border rounded-lg p-2">
+              {membersLoading ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  Loading members...
+                </div>
+              ) : groupMembers.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  No members found
+                </div>
+              ) : (
+                groupMembers.map((member) => (
+                  <div
+                    key={member.user_id}
+                    className="flex items-center gap-3 p-2 hover:bg-secondary rounded-lg cursor-pointer transition-colors"
+                    onClick={() => togglePlayer(member.user_id)}
+                  >
+                    <Checkbox
+                      checked={selectedPlayers.includes(member.user_id)}
+                      onCheckedChange={() => togglePlayer(member.user_id)}
+                    />
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={member.profile?.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {member.profile?.display_name?.charAt(0) || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm truncate">
+                        {member.profile?.display_name || 'Unknown'}
+                        {member.user_id === user?.id && ' (You)'}
+                      </p>
+                      {member.profile?.phi && (
+                        <p className="text-xs text-muted-foreground">
+                          PHI: {member.profile.phi}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Format */}
           <div className="space-y-2">
             <Label>Format</Label>
@@ -274,7 +467,7 @@ export const CreateMatchDialog = ({
             <Button
               className="flex-1 gradient-primary text-primary-foreground"
               onClick={handleSubmit}
-              disabled={!selectedCourse || isSubmitting}
+              disabled={!selectedCourse || selectedPlayers.length < 2 || isSubmitting}
             >
               {isSubmitting ? 'Creating...' : 'Create Match'}
             </Button>
