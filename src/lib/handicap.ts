@@ -50,13 +50,19 @@ export const calculatePartialHandicap = (
 
 /**
  * Calculate team handicap for scramble format
+ * 1-person: 50% (solo player can't pick from multiple shots)
  * 2-person scramble: 35% low + 15% high
  * 4-person scramble: 20% A + 15% B + 10% C + 5% D
  */
 export const calculateScrambleHandicap = (handicaps: number[]): number => {
+  if (handicaps.length === 0) return 0;
+  
   const sorted = [...handicaps].sort((a, b) => a - b);
   
-  if (sorted.length === 2) {
+  if (sorted.length === 1) {
+    // Solo player gets 50% of their handicap
+    return Math.round(sorted[0] * 0.50 * 10) / 10;
+  } else if (sorted.length === 2) {
     return Math.round((sorted[0] * 0.35 + sorted[1] * 0.15) * 10) / 10;
   } else if (sorted.length === 4) {
     return Math.round(
@@ -70,13 +76,19 @@ export const calculateScrambleHandicap = (handicaps: number[]): number => {
 
 /**
  * Calculate team handicap for best ball format
+ * 1-person: 100% (uses full handicap)
  * 2-person: 80% low + 20% high
  * 4-person: 80% A + 60% B + 40% C + 20% D
  */
 export const calculateBestBallHandicap = (handicaps: number[]): number => {
+  if (handicaps.length === 0) return 0;
+  
   const sorted = [...handicaps].sort((a, b) => a - b);
   
-  if (sorted.length === 2) {
+  if (sorted.length === 1) {
+    // Solo player uses 100% of their handicap
+    return sorted[0];
+  } else if (sorted.length === 2) {
     return Math.round((sorted[0] * 0.80 + sorted[1] * 0.20) * 10) / 10;
   } else if (sorted.length === 4) {
     return Math.round(
@@ -86,6 +98,20 @@ export const calculateBestBallHandicap = (handicaps: number[]): number => {
   
   // Default: just use lowest
   return sorted[0];
+};
+
+/**
+ * Calculate team handicap for match play format
+ * 1-person: 100% of their handicap
+ * 2-person: Average of both players' handicaps
+ */
+export const calculateMatchPlayHandicap = (handicaps: number[]): number => {
+  if (handicaps.length === 0) return 0;
+  if (handicaps.length === 1) return handicaps[0];
+  
+  // Average for team match play
+  const sum = handicaps.reduce((a, b) => a + b, 0);
+  return Math.round((sum / handicaps.length) * 10) / 10;
 };
 
 /**

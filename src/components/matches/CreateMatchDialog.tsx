@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -20,12 +19,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, MapPin, Users } from 'lucide-react';
+import { Search, MapPin, Users, Trophy } from 'lucide-react';
 import {
   calculateCourseHandicap,
   calculatePartialHandicap,
   calculateScrambleHandicap,
   calculateBestBallHandicap,
+  calculateMatchPlayHandicap,
   calculateMatchStrokes,
 } from '@/lib/handicap';
 
@@ -50,6 +50,11 @@ interface GroupMember {
   } | null;
 }
 
+interface TeamSlot {
+  teamNumber: number;
+  players: (string | null)[]; // Array of player user_ids, null = empty slot
+}
+
 interface CreateMatchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -71,6 +76,13 @@ const HOLES_OPTIONS = [
   { value: '18', label: '18 Holes' },
 ];
 
+const STROKE_PLAY_PLAYER_OPTIONS = [
+  { value: '1', label: '1 Player' },
+  { value: '2', label: '2 Players' },
+  { value: '3', label: '3 Players' },
+  { value: '4', label: '4 Players' },
+];
+
 export const CreateMatchDialog = ({
   open,
   onOpenChange,
@@ -89,10 +101,13 @@ export const CreateMatchDialog = ({
   const [matchDate, setMatchDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Player selection state
+  // Group members
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
+  
+  // Team-based selection
+  const [numPlayers, setNumPlayers] = useState('2'); // For stroke play
+  const [teams, setTeams] = useState<TeamSlot[]>([]);
 
   const fetchCourses = async () => {
     try {
@@ -112,7 +127,6 @@ export const CreateMatchDialog = ({
 
   const fetchGroupMembers = async () => {
     try {
-      // Fetch members with GSI
       const { data: membersData, error: membersError } = await supabase
         .from('group_members')
         .select('user_id, gsi')
@@ -127,7 +141,6 @@ export const CreateMatchDialog = ({
         return;
       }
 
-      // Fetch profiles separately
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, user_id, display_name, avatar_url, phi')
@@ -155,54 +168,146 @@ export const CreateMatchDialog = ({
     course.state?.toLowerCase().includes(courseSearch.toLowerCase())
   );
 
-  const togglePlayer = (userId: string) => {
-    setSelectedPlayers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
+  // Initialize teams based on format
+  const initializeTeams = (matchFormat: string, playerCount: number = 2) => {
+    if (matchFormat === 'stroke_play') {
+      // Each player is their own team with 1 slot
+      const newTeams: TeamSlot[] = [];
+      for (let i = 0; i < playerCount; i++) {
+        newTeams.push({ teamNumber: i + 1, players: [null] });
+      }
+      setTeams(newTeams);
+    } else if (matchFormat === 'match_play' || matchFormat === '2v2_scramble' || matchFormat === 'best_ball' || matchFormat === 'shamble') {
+      // 2 teams with 2 slots each
+      setTeams([
+        { teamNumber: 1, players: [null, null] },
+        { teamNumber: 2, players: [null, null] },
+      ]);
+    }
   };
 
-  // Helper to get a player's course handicap
-  const getPlayerCourseHandicap = (userId: string, course: Course, holes: number): number => {
+  // Get all selected player IDs across all teams
+  const getAllSelectedPlayerIds = (): string[] => {
+    const ids: string[] = [];
+    teams.forEach(team => {
+      team.players.forEach(p => {
+        if (p) ids.push(p);
+      });
+    });
+    return ids;
+  };
+
+  // Get available players for a dropdown (excludes already selected)
+  const getAvailablePlayers = (currentTeamIndex: number, currentSlotIndex: number): GroupMember[] => {
+    const selectedIds = getAllSelectedPlayerIds();
+    const currentValue = teams[currentTeamIndex]?.players[currentSlotIndex];
+    
+    return groupMembers.filter(m => {
+      // Include if not selected elsewhere, or if it's the current selection
+      return !selectedIds.includes(m.user_id) || m.user_id === currentValue;
+    });
+  };
+
+  // Update a player slot
+  const updatePlayerSlot = (teamIndex: number, slotIndex: number, userId: string | null) => {
+    setTeams(prev => {
+      const newTeams = [...prev];
+      newTeams[teamIndex] = {
+        ...newTeams[teamIndex],
+        players: newTeams[teamIndex].players.map((p, i) => 
+          i === slotIndex ? userId : p
+        ),
+      };
+      return newTeams;
+    });
+  };
+
+  // Get a player's course handicap
+  const getPlayerCourseHandicap = (userId: string): number => {
+    if (!selectedCourse) return 0;
     const member = groupMembers.find(m => m.user_id === userId);
     const gsi = member?.gsi ?? member?.profile?.phi ?? 20;
+    const holes = parseInt(holesPlayed);
     
     const fullCH = calculateCourseHandicap(
       gsi,
-      course.slope_rating,
-      course.course_rating,
-      course.par
+      selectedCourse.slope_rating,
+      selectedCourse.course_rating,
+      selectedCourse.par
     );
     return calculatePartialHandicap(fullCH, holes);
   };
 
-  // Helper to calculate team course handicap based on format
-  const getTeamCourseHandicap = (playerIds: string[], course: Course, holes: number, matchFormat: string): number => {
-    const courseHandicaps = playerIds.map(id => getPlayerCourseHandicap(id, course, holes));
+  // Calculate team course handicap based on format
+  const getTeamCourseHandicap = (playerIds: string[]): number => {
+    const courseHandicaps = playerIds.map(id => getPlayerCourseHandicap(id));
     
-    if ((matchFormat === '2v2_scramble' || matchFormat === 'shamble') && courseHandicaps.length >= 2) {
+    if (format === '2v2_scramble' || format === 'shamble') {
       return calculateScrambleHandicap(courseHandicaps);
-    } else if (matchFormat === 'best_ball' && courseHandicaps.length >= 2) {
+    } else if (format === 'best_ball') {
       return calculateBestBallHandicap(courseHandicaps);
+    } else if (format === 'match_play') {
+      return calculateMatchPlayHandicap(courseHandicaps);
     } else {
-      // Individual: average
-      const sum = courseHandicaps.reduce((a, b) => a + b, 0);
-      return Math.round((sum / courseHandicaps.length) * 10) / 10;
+      // Stroke play - individual, just use their handicap
+      return courseHandicaps.length > 0 ? courseHandicaps[0] : 0;
     }
   };
 
-  const handleSubmit = async () => {
-    if (!selectedCourse || !user) return;
+  // Calculate handicap preview
+  const handicapPreview = useMemo(() => {
+    if (!selectedCourse) return null;
+    
+    const teamsWithPlayers = teams
+      .map((team, index) => {
+        const validPlayers = team.players.filter((p): p is string => p !== null);
+        if (validPlayers.length === 0) return null;
+        
+        const teamCH = getTeamCourseHandicap(validPlayers);
+        const playerNames = validPlayers.map(id => {
+          const member = groupMembers.find(m => m.user_id === id);
+          return member?.profile?.display_name?.split(' ')[0] || 'Unknown';
+        });
+        
+        return {
+          teamNumber: team.teamNumber,
+          courseHandicap: teamCH,
+          playerNames,
+        };
+      })
+      .filter((t): t is NonNullable<typeof t> => t !== null);
+    
+    if (teamsWithPlayers.length === 0) return null;
+    
+    // Calculate relative strokes
+    const handicaps = teamsWithPlayers.map(t => t.courseHandicap);
+    const strokes = calculateMatchStrokes(handicaps);
+    
+    return teamsWithPlayers.map((team, i) => ({
+      ...team,
+      strokes: strokes[i],
+    }));
+  }, [teams, selectedCourse, format, holesPlayed, groupMembers]);
 
-    if (selectedPlayers.length < 2) {
-      toast({
-        title: 'Error',
-        description: 'Please select at least 2 players for the match',
-        variant: 'destructive',
-      });
-      return;
+  // Check minimum requirements
+  const canSubmit = useMemo(() => {
+    if (!selectedCourse) return false;
+    
+    const allPlayers = getAllSelectedPlayerIds();
+    
+    if (format === 'stroke_play') {
+      // At least 1 player for solo rounds
+      return allPlayers.length >= 1;
+    } else {
+      // Team formats need at least 1 player per team (2 total)
+      const team1Players = teams[0]?.players.filter(p => p !== null) || [];
+      const team2Players = teams[1]?.players.filter(p => p !== null) || [];
+      return team1Players.length >= 1 && team2Players.length >= 1;
     }
+  }, [selectedCourse, teams, format]);
+
+  const handleSubmit = async () => {
+    if (!selectedCourse || !user || !canSubmit) return;
 
     setIsSubmitting(true);
     const holes = parseInt(holesPlayed);
@@ -225,84 +330,53 @@ export const CreateMatchDialog = ({
 
       if (error) throw error;
 
-      // Create teams for the match based on format
-      const isTeamFormat = format === '2v2_scramble' || format === 'best_ball' || format === 'shamble';
-      
-      if (isTeamFormat && selectedPlayers.length >= 4) {
-        // Split players into teams (first half team 1, second half team 2)
-        const halfPoint = Math.ceil(selectedPlayers.length / 2);
-        const team1PlayerIds = selectedPlayers.slice(0, halfPoint);
-        const team2PlayerIds = selectedPlayers.slice(halfPoint);
+      // Build teams from state
+      const teamsToCreate = teams
+        .map(team => ({
+          teamNumber: team.teamNumber,
+          players: team.players.filter((p): p is string => p !== null),
+        }))
+        .filter(team => team.players.length > 0);
 
-        // Calculate team handicaps
-        const team1CH = getTeamCourseHandicap(team1PlayerIds, selectedCourse, holes, format);
-        const team2CH = getTeamCourseHandicap(team2PlayerIds, selectedCourse, holes, format);
-        const [team1Strokes, team2Strokes] = calculateMatchStrokes([team1CH, team2CH]);
+      // Calculate course handicaps for each team
+      const teamHandicaps = teamsToCreate.map(team => getTeamCourseHandicap(team.players));
+      const matchStrokes = calculateMatchStrokes(teamHandicaps);
 
-        // Create 2 teams with handicap strokes
-        const { data: teams, error: teamsError } = await supabase
-          .from('teams')
-          .insert([
-            { match_id: match.id, team_number: 1, handicap_strokes: team1Strokes },
-            { match_id: match.id, team_number: 2, handicap_strokes: team2Strokes },
-          ])
-          .select();
+      // Insert teams
+      const teamInserts = teamsToCreate.map((team, index) => ({
+        match_id: match.id,
+        team_number: team.teamNumber,
+        handicap_strokes: matchStrokes[index],
+      }));
 
-        if (teamsError) throw teamsError;
+      const { data: createdTeams, error: teamsError } = await supabase
+        .from('teams')
+        .insert(teamInserts)
+        .select();
 
-        const playerInserts = [
-          ...team1PlayerIds.map(userId => ({
-            team_id: teams![0].id,
+      if (teamsError) throw teamsError;
+
+      // Insert players for each team
+      const playerInserts: { team_id: string; user_id: string; handicap_used: number }[] = [];
+      teamsToCreate.forEach((team, index) => {
+        team.players.forEach(userId => {
+          playerInserts.push({
+            team_id: createdTeams![index].id,
             user_id: userId,
-            handicap_used: getPlayerCourseHandicap(userId, selectedCourse, holes),
-          })),
-          ...team2PlayerIds.map(userId => ({
-            team_id: teams![1].id,
-            user_id: userId,
-            handicap_used: getPlayerCourseHandicap(userId, selectedCourse, holes),
-          })),
-        ];
+            handicap_used: getPlayerCourseHandicap(userId),
+          });
+        });
+      });
 
-        const { error: playersError } = await supabase
-          .from('team_players')
-          .insert(playerInserts);
+      const { error: playersError } = await supabase
+        .from('team_players')
+        .insert(playerInserts);
 
-        if (playersError) throw playersError;
-      } else {
-        // Individual format or not enough for teams - each player gets their own team
-        // Calculate course handicaps for all players
-        const playerCHs = selectedPlayers.map(id => getPlayerCourseHandicap(id, selectedCourse, holes));
-        const matchStrokes = calculateMatchStrokes(playerCHs);
-
-        const teamInserts = selectedPlayers.map((_, index) => ({
-          match_id: match.id,
-          team_number: index + 1,
-          handicap_strokes: matchStrokes[index],
-        }));
-
-        const { data: teams, error: teamsError } = await supabase
-          .from('teams')
-          .insert(teamInserts)
-          .select();
-
-        if (teamsError) throw teamsError;
-
-        const playerInserts = selectedPlayers.map((userId, index) => ({
-          team_id: teams![index].id,
-          user_id: userId,
-          handicap_used: playerCHs[index],
-        }));
-
-        const { error: playersError } = await supabase
-          .from('team_players')
-          .insert(playerInserts);
-
-        if (playersError) throw playersError;
-      }
+      if (playersError) throw playersError;
 
       toast({
         title: 'Success',
-        description: 'Match created with players assigned!',
+        description: 'Match created with teams assigned!',
       });
 
       onOpenChange(false);
@@ -319,16 +393,29 @@ export const CreateMatchDialog = ({
     }
   };
 
+  // Handle format change
+  const handleFormatChange = (newFormat: string) => {
+    setFormat(newFormat);
+    if (newFormat === 'stroke_play') {
+      initializeTeams(newFormat, parseInt(numPlayers));
+    } else {
+      initializeTeams(newFormat);
+    }
+  };
+
+  // Handle number of players change (stroke play only)
+  const handleNumPlayersChange = (value: string) => {
+    setNumPlayers(value);
+    initializeTeams('stroke_play', parseInt(value));
+  };
+
   useEffect(() => {
     if (open) {
       fetchCourses();
       fetchGroupMembers();
-      // Auto-select current user
-      if (user) {
-        setSelectedPlayers([user.id]);
-      }
+      initializeTeams('stroke_play', 2);
     }
-  }, [open, user]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -337,9 +424,15 @@ export const CreateMatchDialog = ({
       setFormat('stroke_play');
       setHolesPlayed('18');
       setMatchDate(new Date().toISOString().split('T')[0]);
-      setSelectedPlayers([]);
+      setNumPlayers('2');
+      setTeams([]);
     }
   }, [open]);
+
+  const getMemberByUserId = (userId: string) => 
+    groupMembers.find(m => m.user_id === userId);
+
+  const isTeamFormat = format === 'match_play' || format === '2v2_scramble' || format === 'best_ball' || format === 'shamble';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -413,59 +506,10 @@ export const CreateMatchDialog = ({
             )}
           </div>
 
-          {/* Player Selection */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Players ({selectedPlayers.length} selected)
-            </Label>
-            <div className="max-h-40 overflow-y-auto space-y-2 border border-border rounded-lg p-2">
-              {membersLoading ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  Loading members...
-                </div>
-              ) : groupMembers.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  No members found
-                </div>
-              ) : (
-                groupMembers.map((member) => (
-                  <div
-                    key={member.user_id}
-                    className="flex items-center gap-3 p-2 hover:bg-secondary rounded-lg cursor-pointer transition-colors"
-                    onClick={() => togglePlayer(member.user_id)}
-                  >
-                    <Checkbox
-                      checked={selectedPlayers.includes(member.user_id)}
-                      onCheckedChange={() => togglePlayer(member.user_id)}
-                    />
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={member.profile?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {member.profile?.display_name?.charAt(0) || '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm truncate">
-                        {member.profile?.display_name || 'Unknown'}
-                        {member.user_id === user?.id && ' (You)'}
-                      </p>
-                      {member.profile?.phi && (
-                        <p className="text-xs text-muted-foreground">
-                          PHI: {member.profile.phi}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Format */}
+          {/* Format Selection */}
           <div className="space-y-2">
             <Label>Format</Label>
-            <Select value={format} onValueChange={setFormat}>
+            <Select value={format} onValueChange={handleFormatChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
@@ -477,6 +521,110 @@ export const CreateMatchDialog = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Number of Players (Stroke Play only) */}
+          {format === 'stroke_play' && (
+            <div className="space-y-2">
+              <Label>Number of Players</Label>
+              <Select value={numPlayers} onValueChange={handleNumPlayersChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select players" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STROKE_PLAY_PLAYER_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Team Configuration */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              {isTeamFormat ? 'Teams' : 'Players'}
+            </Label>
+            
+            {membersLoading ? (
+              <div className="p-4 text-center text-muted-foreground border border-border rounded-lg">
+                Loading members...
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {teams.map((team, teamIndex) => (
+                  <div key={teamIndex} className="border border-border rounded-lg p-3 space-y-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {isTeamFormat ? `Team ${team.teamNumber}` : `Player ${team.teamNumber}`}
+                    </p>
+                    
+                    {team.players.map((playerId, slotIndex) => {
+                      const availablePlayers = getAvailablePlayers(teamIndex, slotIndex);
+                      const isOptionalSlot = isTeamFormat && slotIndex === 1;
+                      
+                      return (
+                        <Select
+                          key={slotIndex}
+                          value={playerId || 'empty'}
+                          onValueChange={(value) => 
+                            updatePlayerSlot(teamIndex, slotIndex, value === 'empty' ? null : value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={isOptionalSlot ? "Select player (optional)" : "Select player..."}>
+                              {playerId ? (
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="w-5 h-5">
+                                    <AvatarImage src={getMemberByUserId(playerId)?.profile?.avatar_url || undefined} />
+                                    <AvatarFallback className="text-xs">
+                                      {getMemberByUserId(playerId)?.profile?.display_name?.charAt(0) || '?'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="truncate">
+                                    {getMemberByUserId(playerId)?.profile?.display_name || 'Unknown'}
+                                    {playerId === user?.id && ' (You)'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">
+                                  {isOptionalSlot ? "Select player (optional)" : "Select player..."}
+                                </span>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {isOptionalSlot && (
+                              <SelectItem value="empty">
+                                <span className="text-muted-foreground">— None —</span>
+                              </SelectItem>
+                            )}
+                            {availablePlayers.map((member) => (
+                              <SelectItem key={member.user_id} value={member.user_id}>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="w-5 h-5">
+                                    <AvatarImage src={member.profile?.avatar_url || undefined} />
+                                    <AvatarFallback className="text-xs">
+                                      {member.profile?.display_name?.charAt(0) || '?'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span>
+                                    {member.profile?.display_name || 'Unknown'}
+                                    {member.user_id === user?.id && ' (You)'}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Holes */}
@@ -506,6 +654,28 @@ export const CreateMatchDialog = ({
             />
           </div>
 
+          {/* Handicap Preview */}
+          {handicapPreview && handicapPreview.length > 0 && (
+            <div className="border border-border rounded-lg p-3 bg-secondary/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="w-4 h-4 text-primary" />
+                <p className="text-sm font-medium text-foreground">Handicap Strokes</p>
+              </div>
+              <div className="space-y-2">
+                {handicapPreview.map((team) => (
+                  <div key={team.teamNumber}>
+                    <p className="font-semibold text-foreground">
+                      {isTeamFormat ? `Team ${team.teamNumber}` : `Player ${team.teamNumber}`}: {team.strokes === 0 ? '0 strokes' : `+${team.strokes} strokes`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {team.playerNames.join(', ')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
@@ -518,7 +688,7 @@ export const CreateMatchDialog = ({
             <Button
               className="flex-1 gradient-primary text-primary-foreground"
               onClick={handleSubmit}
-              disabled={!selectedCourse || selectedPlayers.length < 2 || isSubmitting}
+              disabled={!canSubmit || isSubmitting}
             >
               {isSubmitting ? 'Creating...' : 'Create Match'}
             </Button>
