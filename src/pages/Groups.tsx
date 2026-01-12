@@ -19,7 +19,8 @@ const Groups = () => {
     loading: friendsLoading, 
     sendFriendRequest,
     acceptFriendRequest,
-    declineFriendRequest 
+    declineFriendRequest,
+    removeFriend,
   } = useFriends();
   const {
     notifications,
@@ -138,7 +139,7 @@ const Groups = () => {
         ) : friends.length > 0 ? (
           <div className="space-y-2">
             {friends.map((friend) => (
-              <FriendCard key={friend.id} friend={friend} />
+              <FriendCard key={friend.id} friend={friend} onRemove={removeFriend} />
             ))}
           </div>
         ) : (
