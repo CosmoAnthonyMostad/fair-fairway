@@ -66,14 +66,22 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
 
       {/* Logo header */}
       <div className="flex items-center justify-center pt-12 pb-6 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <Flag className="w-6 h-6 text-primary-foreground" strokeWidth={2} />
-          </div>
-          <h1 className="text-2xl font-display font-bold text-primary-foreground tracking-tight">
-            Golf App
-          </h1>
+      <div className="flex flex-col items-center gap-2">
+        <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+          <Flag className="w-8 h-8 text-primary-foreground" strokeWidth={2} />
         </div>
+        {/* Arching text using SVG */}
+        <svg viewBox="0 0 200 60" className="w-64 h-20">
+          <defs>
+            <path id="textArc" d="M 20 50 Q 100 10 180 50" fill="none" />
+          </defs>
+          <text className="fill-primary-foreground font-display font-bold" style={{ fontSize: '28px' }}>
+            <textPath href="#textArc" startOffset="50%" textAnchor="middle">
+              Golf App
+            </textPath>
+          </text>
+        </svg>
+      </div>
       </div>
 
       {/* Main content - centered vertically */}
