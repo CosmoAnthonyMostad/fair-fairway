@@ -33,6 +33,98 @@ interface ScoreEntryDialogProps {
   onScoresUpdated: () => void;
 }
 
+// Update GSI for players after a match is completed
+const updatePlayerGSI = async (
+  groupId: string,
+  teams: Team[],
+  netScores: { teamId: string; score: number; netScore: number }[],
+  holesPlayed: number
+) => {
+  try {
+    // Get all players and their current GSI
+    const allPlayerIds = teams.flatMap(t => t.players.map(p => p.user_id));
+    
+    const { data: memberData } = await supabase
+      .from('group_members')
+      .select('id, user_id, gsi')
+      .eq('group_id', groupId)
+      .in('user_id', allPlayerIds);
+
+    if (!memberData || memberData.length === 0) return;
+
+    // Count completed matches for each player to determine learning rate
+    const { data: matchCounts } = await supabase
+      .from('team_players')
+      .select('user_id, teams!inner(matches!inner(group_id, status))')
+      .in('user_id', allPlayerIds);
+
+    // Calculate rounds per player
+    const playerRounds: Record<string, number> = {};
+    allPlayerIds.forEach(id => playerRounds[id] = 1); // Start at 1 for this match
+    
+    matchCounts?.forEach((mc: any) => {
+      if (mc.teams?.matches?.group_id === groupId && mc.teams?.matches?.status === 'completed') {
+        playerRounds[mc.user_id] = (playerRounds[mc.user_id] || 0) + 1;
+      }
+    });
+
+    // Partial round weight (18 holes = 100%, 9 holes = 50%, 6 holes = 33%)
+    const roundWeight = holesPlayed / 18;
+
+    // For stroke play with 2 players, adjust GSI based on margin
+    if (teams.length === 2) {
+      const team1 = teams.find(t => t.team_number === 1);
+      const team2 = teams.find(t => t.team_number === 2);
+      const net1 = netScores.find(ns => ns.teamId === team1?.id)?.netScore ?? 0;
+      const net2 = netScores.find(ns => ns.teamId === team2?.id)?.netScore ?? 0;
+      
+      // Margin: positive means team1 won (shot lower)
+      const margin = net2 - net1;
+      
+      // Expected margin based on current GSI difference should be 0 after handicaps
+      // If team1 wins by more than expected, their GSI should go down (better)
+      // If team1 loses, their GSI should go up (worse)
+      
+      for (const team of teams) {
+        for (const player of team.players) {
+          const member = memberData.find(m => m.user_id === player.user_id);
+          if (!member) continue;
+
+          const currentGsi = member.gsi ?? 20;
+          const rounds = playerRounds[player.user_id] || 1;
+          
+          // Adaptive learning rate: alpha = 2 / (n + 2), capped for stability
+          const alpha = Math.min(2 / (rounds + 2), 0.5);
+          
+          // Calculate adjustment: if you won, GSI goes down; if you lost, GSI goes up
+          // Margin is from team1's perspective, so adjust accordingly
+          let adjustment = 0;
+          if (team.team_number === 1) {
+            // Team 1: positive margin = won = lower GSI
+            adjustment = -margin * alpha * roundWeight * 0.5;
+          } else {
+            // Team 2: positive margin (team1 won) = lost = higher GSI
+            adjustment = margin * alpha * roundWeight * 0.5;
+          }
+          
+          // Cap adjustment at ±4 strokes per match
+          adjustment = Math.max(-4, Math.min(4, adjustment));
+          
+          const newGsi = Math.round((currentGsi + adjustment) * 10) / 10;
+          
+          // Update the member's GSI
+          await supabase
+            .from('group_members')
+            .update({ gsi: newGsi })
+            .eq('id', member.id);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error updating GSI:', error);
+  }
+};
+
 export const ScoreEntryDialog = ({
   open,
   onOpenChange,
@@ -163,6 +255,18 @@ export const ScoreEntryDialog = ({
           .eq('id', ns.teamId);
 
         if (error) throw error;
+      }
+
+      // Get match info for group_id and holes_played
+      const { data: matchInfo } = await supabase
+        .from('matches')
+        .select('group_id, holes_played')
+        .eq('id', matchId)
+        .maybeSingle();
+
+      if (matchInfo) {
+        // Update GSI for all players based on match results
+        await updatePlayerGSI(matchInfo.group_id, teams, netScores, matchInfo.holes_played || 18);
       }
 
       // Update match status to completed
