@@ -313,7 +313,9 @@ const GroupDetail = () => {
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="text-sm text-muted-foreground">Group Handicap:</p>
-                <p className="font-semibold text-foreground">{member.gsi !== null ? member.gsi : 'N/A'}</p>
+                <p className="font-semibold text-foreground">
+                  {member.ghi !== null ? (member.ghi === 0 ? '0' : `+${member.ghi}`) : 'N/A'}
+                </p>
               </div>
             </div>
           ))}
