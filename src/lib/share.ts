@@ -38,6 +38,7 @@ export const shareContent = async (data: ShareData): Promise<boolean> => {
 };
 
 export const shareMatch = async (match: {
+  id: string;
   courseName: string;
   format: string;
   date: string;
@@ -47,11 +48,13 @@ export const shareMatch = async (match: {
     ? `🏆 ${match.winnerNames.join(' & ')} won!` 
     : '';
   
-  const text = `⛳ Just played ${match.format} at ${match.courseName} on ${match.date}. ${winnerText}`.trim();
+  const text = `⛳ ${match.format} at ${match.courseName}. ${winnerText}`.trim();
+  const url = `${window.location.origin}/share/match/${match.id}`;
   
   return shareContent({
     title: `Golf Match at ${match.courseName}`,
     text,
+    url,
   });
 };
 

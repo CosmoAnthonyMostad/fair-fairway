@@ -10,6 +10,7 @@ import GroupDetail from "./pages/GroupDetail";
 import Profile from "./pages/Profile";
 import FriendProfile from "./pages/FriendProfile";
 import Settings from "./pages/Settings";
+import ShareMatch from "./pages/ShareMatch";
 import NotFound from "./pages/NotFound";
 import MainLayout from "./components/layout/MainLayout";
 
@@ -105,6 +106,8 @@ const AppRoutes = () => {
           </PublicRoute>
         }
       />
+      {/* Public share page - no auth required */}
+      <Route path="/share/match/:matchId" element={<ShareMatch />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
