@@ -373,26 +373,33 @@ const GroupDetail = () => {
           {isOwner && <Button size="sm" variant="outline" onClick={() => setAddMembersDialogOpen(true)}><UserPlus className="w-4 h-4 mr-1" />Add</Button>}
         </div>
         <div className="space-y-2">
-          {members.map((member) => (
-            <div key={member.id} className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-muted-foreground" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-foreground truncate">{member.display_name || 'Anonymous'}</p>
-                  {member.user_id === group.owner_id && <Crown className="w-4 h-4 text-accent flex-shrink-0" />}
-                  {member.user_id === user?.id && <span className="text-xs text-muted-foreground">(You)</span>}
+          {members.map((member) => {
+            const isCurrentUser = member.user_id === user?.id;
+            return (
+              <div 
+                key={member.id} 
+                className={`flex items-center gap-3 p-3 bg-card rounded-lg border border-border ${!isCurrentUser ? 'cursor-pointer hover:bg-accent/50 transition-colors' : ''}`}
+                onClick={() => !isCurrentUser && navigate(`/profile/${member.user_id}`)}
+              >
+                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-muted-foreground" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground truncate">{member.display_name || 'Anonymous'}</p>
+                    {member.user_id === group.owner_id && <Crown className="w-4 h-4 text-accent flex-shrink-0" />}
+                    {isCurrentUser && <span className="text-xs text-muted-foreground">(You)</span>}
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm text-muted-foreground">Group Handicap:</p>
+                  <p className="font-semibold text-foreground">
+                    {member.ghi !== null ? (member.ghi === 0 ? '0' : `+${member.ghi}`) : 'N/A'}
+                  </p>
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
-                <p className="text-sm text-muted-foreground">Group Handicap:</p>
-                <p className="font-semibold text-foreground">
-                  {member.ghi !== null ? (member.ghi === 0 ? '0' : `+${member.ghi}`) : 'N/A'}
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
