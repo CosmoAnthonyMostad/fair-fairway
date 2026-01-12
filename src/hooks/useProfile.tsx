@@ -16,10 +16,21 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface RecentMatch {
+  id: string;
+  match_date: string;
+  course_name: string;
+  format: string;
+  is_winner: boolean;
+  score: number | null;
+  opponent_score: number | null;
+}
+
 export const useProfile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async () => {
@@ -42,30 +53,69 @@ export const useProfile = () => {
         return;
       }
 
-      // Calculate actual rounds from completed matches
-      const { data: roundsData } = await supabase
+      // Fetch user's team participation with match details
+      const { data: participationData } = await supabase
         .from('team_players')
-        .select('team_id, teams!inner(match_id, is_winner, matches!inner(status))')
+        .select(`
+          team_id,
+          teams!inner(
+            id,
+            match_id,
+            team_number,
+            is_winner,
+            score,
+            matches!inner(
+              id,
+              match_date,
+              status,
+              format,
+              courses(name)
+            )
+          )
+        `)
         .eq('user_id', user.id);
 
-      // Count completed rounds and wins
+      // Process data for stats and recent matches
       let totalRounds = 0;
       let totalWins = 0;
+      const matchDetails: RecentMatch[] = [];
       const countedMatches = new Set<string>();
 
-      (roundsData || []).forEach((tp: any) => {
-        const matchId = tp.teams?.match_id;
-        const status = tp.teams?.matches?.status;
-        const isWinner = tp.teams?.is_winner;
+      for (const tp of participationData || []) {
+        const team = tp.teams as any;
+        const match = team?.matches;
+        const matchId = team?.match_id;
 
-        if (status === 'completed' && matchId && !countedMatches.has(matchId)) {
+        if (match?.status === 'completed' && matchId && !countedMatches.has(matchId)) {
           countedMatches.add(matchId);
           totalRounds++;
-          if (isWinner) {
+          if (team.is_winner) {
             totalWins++;
           }
+
+          // Get opponent score for this match
+          const { data: opponentTeam } = await supabase
+            .from('teams')
+            .select('score')
+            .eq('match_id', matchId)
+            .neq('id', team.id)
+            .maybeSingle();
+
+          matchDetails.push({
+            id: matchId,
+            match_date: match.match_date,
+            course_name: match.courses?.name || 'Unknown Course',
+            format: match.format,
+            is_winner: team.is_winner,
+            score: team.score,
+            opponent_score: opponentTeam?.score || null,
+          });
         }
-      });
+      }
+
+      // Sort by date descending and take last 5
+      matchDetails.sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
+      setRecentMatches(matchDetails.slice(0, 5));
 
       setProfile({
         ...profileData,
@@ -160,6 +210,7 @@ export const useProfile = () => {
 
   return {
     profile,
+    recentMatches,
     loading,
     updateProfile,
     uploadAvatar,
