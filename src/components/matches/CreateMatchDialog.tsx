@@ -21,6 +21,13 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, MapPin, Users } from 'lucide-react';
+import {
+  calculateCourseHandicap,
+  calculatePartialHandicap,
+  calculateScrambleHandicap,
+  calculateBestBallHandicap,
+  calculateMatchStrokes,
+} from '@/lib/handicap';
 
 interface Course {
   id: string;
@@ -34,6 +41,7 @@ interface Course {
 
 interface GroupMember {
   user_id: string;
+  gsi: number | null;
   profile: {
     id: string;
     display_name: string | null;
@@ -104,10 +112,10 @@ export const CreateMatchDialog = ({
 
   const fetchGroupMembers = async () => {
     try {
-      // Fetch members first
+      // Fetch members with GSI
       const { data: membersData, error: membersError } = await supabase
         .from('group_members')
-        .select('user_id')
+        .select('user_id, gsi')
         .eq('group_id', groupId);
 
       if (membersError) throw membersError;
@@ -129,6 +137,7 @@ export const CreateMatchDialog = ({
 
       const combined = (membersData || []).map(m => ({
         user_id: m.user_id,
+        gsi: m.gsi,
         profile: profilesData?.find(p => p.user_id === m.user_id) || null,
       }));
 
@@ -154,6 +163,35 @@ export const CreateMatchDialog = ({
     );
   };
 
+  // Helper to get a player's course handicap
+  const getPlayerCourseHandicap = (userId: string, course: Course, holes: number): number => {
+    const member = groupMembers.find(m => m.user_id === userId);
+    const gsi = member?.gsi ?? member?.profile?.phi ?? 20;
+    
+    const fullCH = calculateCourseHandicap(
+      gsi,
+      course.slope_rating,
+      course.course_rating,
+      course.par
+    );
+    return calculatePartialHandicap(fullCH, holes);
+  };
+
+  // Helper to calculate team course handicap based on format
+  const getTeamCourseHandicap = (playerIds: string[], course: Course, holes: number, matchFormat: string): number => {
+    const courseHandicaps = playerIds.map(id => getPlayerCourseHandicap(id, course, holes));
+    
+    if ((matchFormat === '2v2_scramble' || matchFormat === 'shamble') && courseHandicaps.length >= 2) {
+      return calculateScrambleHandicap(courseHandicaps);
+    } else if (matchFormat === 'best_ball' && courseHandicaps.length >= 2) {
+      return calculateBestBallHandicap(courseHandicaps);
+    } else {
+      // Individual: average
+      const sum = courseHandicaps.reduce((a, b) => a + b, 0);
+      return Math.round((sum / courseHandicaps.length) * 10) / 10;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selectedCourse || !user) return;
 
@@ -167,6 +205,8 @@ export const CreateMatchDialog = ({
     }
 
     setIsSubmitting(true);
+    const holes = parseInt(holesPlayed);
+    
     try {
       // Create the match
       const { data: match, error } = await supabase
@@ -175,7 +215,7 @@ export const CreateMatchDialog = ({
           group_id: groupId,
           course_id: selectedCourse.id,
           format,
-          holes_played: parseInt(holesPlayed),
+          holes_played: holes,
           match_date: matchDate,
           created_by: user.id,
           status: 'pending',
@@ -186,35 +226,40 @@ export const CreateMatchDialog = ({
       if (error) throw error;
 
       // Create teams for the match based on format
-      // For 2v2 formats, create 2 teams with 2 players each
-      // For individual formats, create a team per player
       const isTeamFormat = format === '2v2_scramble' || format === 'best_ball' || format === 'shamble';
       
       if (isTeamFormat && selectedPlayers.length >= 4) {
-        // Create 2 teams
+        // Split players into teams (first half team 1, second half team 2)
+        const halfPoint = Math.ceil(selectedPlayers.length / 2);
+        const team1PlayerIds = selectedPlayers.slice(0, halfPoint);
+        const team2PlayerIds = selectedPlayers.slice(halfPoint);
+
+        // Calculate team handicaps
+        const team1CH = getTeamCourseHandicap(team1PlayerIds, selectedCourse, holes, format);
+        const team2CH = getTeamCourseHandicap(team2PlayerIds, selectedCourse, holes, format);
+        const [team1Strokes, team2Strokes] = calculateMatchStrokes([team1CH, team2CH]);
+
+        // Create 2 teams with handicap strokes
         const { data: teams, error: teamsError } = await supabase
           .from('teams')
           .insert([
-            { match_id: match.id, team_number: 1 },
-            { match_id: match.id, team_number: 2 },
+            { match_id: match.id, team_number: 1, handicap_strokes: team1Strokes },
+            { match_id: match.id, team_number: 2, handicap_strokes: team2Strokes },
           ])
           .select();
 
         if (teamsError) throw teamsError;
 
-        // Split players into teams (first half team 1, second half team 2)
-        const halfPoint = Math.ceil(selectedPlayers.length / 2);
-        const team1Players = selectedPlayers.slice(0, halfPoint);
-        const team2Players = selectedPlayers.slice(halfPoint);
-
         const playerInserts = [
-          ...team1Players.map(userId => ({
+          ...team1PlayerIds.map(userId => ({
             team_id: teams![0].id,
             user_id: userId,
+            handicap_used: getPlayerCourseHandicap(userId, selectedCourse, holes),
           })),
-          ...team2Players.map(userId => ({
+          ...team2PlayerIds.map(userId => ({
             team_id: teams![1].id,
             user_id: userId,
+            handicap_used: getPlayerCourseHandicap(userId, selectedCourse, holes),
           })),
         ];
 
@@ -225,9 +270,14 @@ export const CreateMatchDialog = ({
         if (playersError) throw playersError;
       } else {
         // Individual format or not enough for teams - each player gets their own team
+        // Calculate course handicaps for all players
+        const playerCHs = selectedPlayers.map(id => getPlayerCourseHandicap(id, selectedCourse, holes));
+        const matchStrokes = calculateMatchStrokes(playerCHs);
+
         const teamInserts = selectedPlayers.map((_, index) => ({
           match_id: match.id,
           team_number: index + 1,
+          handicap_strokes: matchStrokes[index],
         }));
 
         const { data: teams, error: teamsError } = await supabase
@@ -240,6 +290,7 @@ export const CreateMatchDialog = ({
         const playerInserts = selectedPlayers.map((userId, index) => ({
           team_id: teams![index].id,
           user_id: userId,
+          handicap_used: playerCHs[index],
         }));
 
         const { error: playersError } = await supabase
