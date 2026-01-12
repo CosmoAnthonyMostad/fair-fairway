@@ -86,22 +86,40 @@ export const useGroups = () => {
 
       if (groupError) throw groupError;
 
-      // Add creator as a member
+      // Get creator's PHI to initialize GSI
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('phi')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Add creator as a member with GSI initialized from PHI
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({
           group_id: group.id,
           user_id: user.id,
+          gsi: creatorProfile?.phi ?? 20,
         });
 
       if (memberError) throw memberError;
 
-      // Add selected friends as members
+      // Add selected friends as members with GSI from their PHI
       if (memberIds && memberIds.length > 0) {
-        const memberInserts = memberIds.map(userId => ({
-          group_id: group.id,
-          user_id: userId,
-        }));
+        // Get PHI values for all friends
+        const { data: friendProfiles } = await supabase
+          .from('profiles')
+          .select('user_id, phi')
+          .in('user_id', memberIds);
+
+        const memberInserts = memberIds.map(userId => {
+          const profile = friendProfiles?.find(p => p.user_id === userId);
+          return {
+            group_id: group.id,
+            user_id: userId,
+            gsi: profile?.phi ?? 20,
+          };
+        });
 
         const { error: friendsError } = await supabase
           .from('group_members')

@@ -59,11 +59,21 @@ export const AddMembersDialog = ({
 
     setIsSubmitting(true);
     try {
-      // Add selected friends as members
-      const memberInserts = selectedFriends.map(userId => ({
-        group_id: groupId,
-        user_id: userId,
-      }));
+      // Get PHI values for all selected friends to initialize GSI
+      const { data: friendProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, phi')
+        .in('user_id', selectedFriends);
+
+      // Add selected friends as members with GSI from their PHI
+      const memberInserts = selectedFriends.map(userId => {
+        const profile = friendProfiles?.find(p => p.user_id === userId);
+        return {
+          group_id: groupId,
+          user_id: userId,
+          gsi: profile?.phi ?? 20,
+        };
+      });
 
       const { error: membersError } = await supabase
         .from('group_members')
