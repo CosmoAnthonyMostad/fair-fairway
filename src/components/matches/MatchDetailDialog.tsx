@@ -400,146 +400,120 @@ export const MatchDetailDialog = ({
           </p>
         ) : (
           <div className="space-y-6">
-            {/* Match Info */}
-            <div className="bg-secondary/50 rounded-lg p-3 space-y-1">
-              <p className="font-semibold text-foreground">{matchInfo.course?.name || 'Unknown Course'}</p>
-              {matchInfo.course?.city && (
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {[matchInfo.course.city, matchInfo.course.state].filter(Boolean).join(', ')}
-                </p>
-              )}
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {format(new Date(matchInfo.match_date), 'MMM d, yyyy')}
-                </span>
-                <span>{formatLabel(matchInfo.format)}</span>
-                <span>{matchInfo.holes_played} holes</span>
-              </div>
-            </div>
-
-            {/* Photo Section */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Camera className="w-4 h-4" />
-                Match Photo
-              </Label>
-              {(photoPreview || matchInfo.photo_url) && !isEditingPhoto ? (
-                <div className="relative">
-                  <img 
-                    src={photoPreview || matchInfo.photo_url || ''} 
-                    alt="Match" 
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="absolute top-2 right-2"
+            {/* Match Info with Photo */}
+            <div className="flex items-start gap-3">
+              {/* Match Photo - Small Circle */}
+              <div className="flex-shrink-0">
+                {(photoPreview || matchInfo.photo_url) && !isEditingPhoto ? (
+                  <div 
+                    className="w-16 h-16 rounded-full overflow-hidden border-2 border-border cursor-pointer relative group"
                     onClick={() => setIsEditingPhoto(true)}
                   >
-                    <Pencil className="w-3 h-3 mr-1" />
-                    Change
-                  </Button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-border rounded-lg p-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                    id="match-photo-input"
-                  />
-                  <label
-                    htmlFor="match-photo-input"
-                    className="flex flex-col items-center gap-2 cursor-pointer"
+                    <img 
+                      src={photoPreview || matchInfo.photo_url || ''} 
+                      alt="Match" 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Pencil className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-full border-2 border-dashed border-border flex items-center justify-center bg-secondary/50">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                      id="match-photo-input"
+                    />
+                    <label htmlFor="match-photo-input" className="cursor-pointer flex flex-col items-center">
+                      <Camera className="w-5 h-5 text-muted-foreground" />
+                    </label>
+                  </div>
+                )}
+                {isEditingPhoto && (photoPreview || matchInfo.photo_url) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-16 mt-1 text-xs h-6 px-1"
+                    onClick={() => setIsEditingPhoto(false)}
                   >
-                    <Camera className="w-8 h-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      Click to upload a photo
-                    </span>
-                  </label>
-                  {isEditingPhoto && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="w-full mt-2"
-                      onClick={() => setIsEditingPhoto(false)}
-                    >
-                      <X className="w-3 h-3 mr-1" />
-                      Cancel
-                    </Button>
-                  )}
+                    Cancel
+                  </Button>
+                )}
+              </div>
+              
+              {/* Match Details */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground truncate">{matchInfo.course?.name || 'Unknown Course'}</p>
+                {matchInfo.course?.city && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate">{[matchInfo.course.city, matchInfo.course.state].filter(Boolean).join(', ')}</span>
+                  </p>
+                )}
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {format(new Date(matchInfo.match_date), 'MMM d, yyyy')}
+                  </span>
+                  <span>{formatLabel(matchInfo.format)}</span>
+                  <span>{matchInfo.holes_played}H</span>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Teams & Scores */}
-            {teams.map((team) => (
-              <div key={team.id} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base font-semibold flex items-center gap-2">
-                      Team {team.team_number}
+            {teams.map((team) => {
+              const grossScore = scores[team.id] ? parseInt(scores[team.id]) : null;
+              const netScore = grossScore !== null ? grossScore - team.handicap_strokes : null;
+              
+              return (
+                <div key={team.id} className="border border-border rounded-lg p-3 space-y-3">
+                  {/* Team Header with Handicap */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">Team {team.team_number}</span>
                       {team.is_winner && matchInfo.status === 'completed' && (
                         <Trophy className="w-4 h-4 text-accent" />
                       )}
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
+                    </div>
+                    <span className="text-sm text-muted-foreground">
                       +{team.handicap_strokes} strokes
-                    </p>
+                    </span>
+                  </div>
+
+                  {/* Players - Just Names */}
+                  <p className="text-sm text-muted-foreground">
+                    {team.players.map(p => p.display_name?.split(' ')[0] || 'Player').join(', ')}
+                  </p>
+
+                  {/* Score Input - Cleaner Layout */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`score-${team.id}`} className="text-sm whitespace-nowrap">
+                        Score:
+                      </Label>
+                      <Input
+                        id={`score-${team.id}`}
+                        type="number"
+                        min="0"
+                        value={scores[team.id] || ''}
+                        onChange={(e) => setScores({ ...scores, [team.id]: e.target.value })}
+                        className="w-20 h-8"
+                        placeholder="72"
+                      />
+                    </div>
+                    {netScore !== null && (
+                      <span className="text-sm font-medium text-foreground">
+                        Net: {netScore}
+                      </span>
+                    )}
                   </div>
                 </div>
-
-                {/* Players */}
-                <div className="flex flex-wrap gap-2">
-                  {team.players.map((player) => (
-                    <div
-                      key={player.user_id}
-                      className="flex items-center gap-2 px-2 py-1 bg-secondary rounded"
-                    >
-                      <div className="w-5 h-5 rounded-full bg-background flex items-center justify-center">
-                        {player.avatar_url ? (
-                          <img src={player.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          <User className="w-3 h-3 text-muted-foreground" />
-                        )}
-                      </div>
-                      <span className="text-xs font-medium">
-                        {player.display_name || 'Player'}
-                      </span>
-                      {player.handicap_used !== null && (
-                        <span className="text-xs text-muted-foreground">
-                          CH: {player.handicap_used.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Score Input */}
-                <div className="flex items-center gap-3">
-                  <Label htmlFor={`score-${team.id}`} className="w-24">
-                    Gross Score:
-                  </Label>
-                  <Input
-                    id={`score-${team.id}`}
-                    type="number"
-                    min="0"
-                    value={scores[team.id] || ''}
-                    onChange={(e) => setScores({ ...scores, [team.id]: e.target.value })}
-                    className="w-24"
-                    placeholder="72"
-                  />
-                  {scores[team.id] && (
-                    <span className="text-sm text-muted-foreground">
-                      Net: {parseInt(scores[team.id]) - team.handicap_strokes}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Actions */}
             <div className="flex gap-3 pt-2">
