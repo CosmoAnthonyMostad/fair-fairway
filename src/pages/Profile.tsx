@@ -10,6 +10,7 @@ const Profile = () => {
   const { profile, loading, updateProfile, uploadAvatar } = useProfile();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
+  // Win rate = wins / rounds (ties excluded from calculation happens at data level)
   const winRate = profile?.total_rounds && profile.total_rounds > 0 
     ? Math.round((profile.total_wins || 0) / profile.total_rounds * 100) 
     : 0;
