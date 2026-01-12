@@ -56,6 +56,7 @@ export const MatchCard = ({ match, onClick }: MatchCardProps) => {
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await shareMatch({
+      id: match.id,
       courseName: match.course_name || 'Unknown Course',
       format: formatLabel(match.format),
       date: format(new Date(match.match_date), 'MMM d, yyyy'),
