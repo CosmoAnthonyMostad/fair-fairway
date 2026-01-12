@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   ChevronRight, 
@@ -9,6 +10,11 @@ import {
   User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
+import { NotificationSettingsDialog } from '@/components/settings/NotificationSettingsDialog';
+import { PrivacySettingsDialog } from '@/components/settings/PrivacySettingsDialog';
+import { HelpCenterDialog } from '@/components/settings/HelpCenterDialog';
+import { useProfile } from '@/hooks/useProfile';
 
 const SettingsItem = ({ 
   icon: Icon, 
@@ -33,6 +39,12 @@ const SettingsItem = ({
 
 const Settings = () => {
   const { signOut } = useAuth();
+  const { profile, updateProfile, uploadAvatar } = useProfile();
+  
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   return (
     <>
@@ -49,11 +61,11 @@ const Settings = () => {
           Account
         </h2>
         <div className="bg-card border-y border-border">
-          <SettingsItem icon={User} label="Edit Profile" />
+          <SettingsItem icon={User} label="Edit Profile" onClick={() => setEditProfileOpen(true)} />
           <div className="h-px bg-border ml-12" />
-          <SettingsItem icon={Bell} label="Notifications" />
+          <SettingsItem icon={Bell} label="Notifications" onClick={() => setNotificationsOpen(true)} />
           <div className="h-px bg-border ml-12" />
-          <SettingsItem icon={Shield} label="Privacy" />
+          <SettingsItem icon={Shield} label="Privacy" onClick={() => setPrivacyOpen(true)} />
         </div>
       </section>
 
@@ -62,9 +74,9 @@ const Settings = () => {
           Support
         </h2>
         <div className="bg-card border-y border-border">
-          <SettingsItem icon={HelpCircle} label="Help Center" />
+          <SettingsItem icon={HelpCircle} label="Help Center" onClick={() => setHelpOpen(true)} />
           <div className="h-px bg-border ml-12" />
-          <SettingsItem icon={FileText} label="Terms of Service" />
+          <SettingsItem icon={FileText} label="Terms of Service" onClick={() => window.open('/terms', '_blank')} />
         </div>
       </section>
 
@@ -84,6 +96,27 @@ const Settings = () => {
       <p className="text-center text-xs text-muted-foreground pb-4">
         Version 1.0.0
       </p>
+
+      {/* Dialogs */}
+      <EditProfileDialog
+        open={editProfileOpen}
+        onOpenChange={setEditProfileOpen}
+        profile={profile}
+        onSave={updateProfile}
+        onUploadAvatar={uploadAvatar}
+      />
+      <NotificationSettingsDialog 
+        open={notificationsOpen} 
+        onOpenChange={setNotificationsOpen} 
+      />
+      <PrivacySettingsDialog 
+        open={privacyOpen} 
+        onOpenChange={setPrivacyOpen} 
+      />
+      <HelpCenterDialog 
+        open={helpOpen} 
+        onOpenChange={setHelpOpen} 
+      />
     </>
   );
 };
