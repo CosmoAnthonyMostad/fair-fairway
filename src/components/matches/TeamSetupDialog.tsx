@@ -8,10 +8,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { User, Users, ArrowLeftRight } from 'lucide-react';
+import { User, Users } from 'lucide-react';
+import {
+  calculateCourseHandicap,
+  calculatePartialHandicap,
+  calculateScrambleHandicap,
+  calculateBestBallHandicap,
+  calculateMatchStrokes,
+} from '@/lib/handicap';
 
 interface GroupMember {
   id: string;
@@ -20,6 +25,12 @@ interface GroupMember {
   avatar_url: string | null;
   gsi: number | null;
   phi: number | null;
+}
+
+interface CourseInfo {
+  slope_rating: number;
+  course_rating: number;
+  par: number;
 }
 
 interface TeamSetupDialogProps {
@@ -41,6 +52,8 @@ export const TeamSetupDialog = ({
 }: TeamSetupDialogProps) => {
   const { toast } = useToast();
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [courseInfo, setCourseInfo] = useState<CourseInfo | null>(null);
+  const [holesPlayed, setHolesPlayed] = useState(18);
   const [loading, setLoading] = useState(true);
   const [team1Players, setTeam1Players] = useState<string[]>([]);
   const [team2Players, setTeam2Players] = useState<string[]>([]);
@@ -48,6 +61,25 @@ export const TeamSetupDialog = ({
 
   const fetchMembers = async () => {
     try {
+      // Fetch match info for course and holes
+      const { data: matchData } = await supabase
+        .from('matches')
+        .select('holes_played, courses(slope_rating, course_rating, par)')
+        .eq('id', matchId)
+        .maybeSingle();
+
+      if (matchData) {
+        setHolesPlayed(matchData.holes_played || 18);
+        const course = matchData.courses as any;
+        if (course) {
+          setCourseInfo({
+            slope_rating: course.slope_rating,
+            course_rating: course.course_rating,
+            par: course.par,
+          });
+        }
+      }
+
       // Fetch group members
       const { data: membersData, error: membersError } = await supabase
         .from('group_members')
@@ -90,28 +122,38 @@ export const TeamSetupDialog = ({
     }
   };
 
-  const getHandicap = (member: GroupMember): number => {
-    // Use GSI if available, otherwise use PHI, otherwise default to 20
+  const getGsi = (member: GroupMember): number => {
     return member.gsi ?? member.phi ?? 20;
   };
 
-  const calculateTeamHandicap = (playerIds: string[]): number => {
+  const getCourseHandicap = (member: GroupMember): number => {
+    const gsi = getGsi(member);
+    if (!courseInfo) return gsi;
+    
+    const fullCH = calculateCourseHandicap(
+      gsi,
+      courseInfo.slope_rating,
+      courseInfo.course_rating,
+      courseInfo.par
+    );
+    return calculatePartialHandicap(fullCH, holesPlayed);
+  };
+
+  const calculateTeamCourseHandicap = (playerIds: string[]): number => {
     const players = members.filter(m => playerIds.includes(m.user_id));
     if (players.length === 0) return 0;
 
-    const handicaps = players.map(p => getHandicap(p)).sort((a, b) => a - b);
+    const courseHandicaps = players.map(p => getCourseHandicap(p));
 
     // Team handicap calculation based on format
-    if (format === 'scramble' && players.length === 2) {
-      // 2-person scramble: 35% low + 15% high
-      return Math.round((handicaps[0] * 0.35 + handicaps[1] * 0.15) * 10) / 10;
-    } else if (format === 'best_ball' && players.length === 2) {
-      // Best ball: 80% low + 20% high
-      return Math.round((handicaps[0] * 0.8 + handicaps[1] * 0.2) * 10) / 10;
+    if ((format === '2v2_scramble' || format === 'shamble') && players.length >= 2) {
+      return calculateScrambleHandicap(courseHandicaps);
+    } else if (format === 'best_ball' && players.length >= 2) {
+      return calculateBestBallHandicap(courseHandicaps);
     } else {
-      // Default: average
-      const sum = handicaps.reduce((a, b) => a + b, 0);
-      return Math.round((sum / handicaps.length) * 10) / 10;
+      // Stroke play / match play: average or sum doesn't matter for relative
+      const sum = courseHandicaps.reduce((a, b) => a + b, 0);
+      return Math.round((sum / courseHandicaps.length) * 10) / 10;
     }
   };
 
@@ -148,12 +190,9 @@ export const TeamSetupDialog = ({
     setIsSubmitting(true);
     try {
       // Calculate relative handicaps (best team gets 0)
-      const team1Handicap = calculateTeamHandicap(team1Players);
-      const team2Handicap = calculateTeamHandicap(team2Players);
-      const minHandicap = Math.min(team1Handicap, team2Handicap);
-      
-      const team1Strokes = Math.round(team1Handicap - minHandicap);
-      const team2Strokes = Math.round(team2Handicap - minHandicap);
+      const team1Handicap = calculateTeamCourseHandicap(team1Players);
+      const team2Handicap = calculateTeamCourseHandicap(team2Players);
+      const [team1Strokes, team2Strokes] = calculateMatchStrokes([team1Handicap, team2Handicap]);
 
       // Create Team 1
       const { data: team1, error: team1Error } = await supabase
@@ -187,7 +226,7 @@ export const TeamSetupDialog = ({
         return {
           team_id: team1.id,
           user_id: userId,
-          handicap_used: getHandicap(member!),
+          handicap_used: getCourseHandicap(member!),
         };
       });
 
@@ -203,7 +242,7 @@ export const TeamSetupDialog = ({
         return {
           team_id: team2.id,
           user_id: userId,
-          handicap_used: getHandicap(member!),
+          handicap_used: getCourseHandicap(member!),
         };
       });
 
@@ -241,9 +280,9 @@ export const TeamSetupDialog = ({
     }
   }, [open, groupId]);
 
-  const team1Handicap = calculateTeamHandicap(team1Players);
-  const team2Handicap = calculateTeamHandicap(team2Players);
-  const minHandicap = Math.min(team1Handicap, team2Handicap);
+  const team1Handicap = calculateTeamCourseHandicap(team1Players);
+  const team2Handicap = calculateTeamCourseHandicap(team2Players);
+  const [team1Strokes, team2Strokes] = calculateMatchStrokes([team1Handicap, team2Handicap]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -268,7 +307,7 @@ export const TeamSetupDialog = ({
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-semibold">Team 1</Label>
                   <span className="text-sm text-muted-foreground">
-                    +{Math.round(team1Handicap - minHandicap)} strokes
+                    +{team1Strokes} strokes
                   </span>
                 </div>
                 <div className="space-y-1 p-2 border border-border rounded-lg min-h-24 bg-primary/5">
@@ -290,7 +329,7 @@ export const TeamSetupDialog = ({
                           </div>
                           <span className="text-sm font-medium truncate">{member?.display_name || 'Player'}</span>
                           <span className="text-xs text-muted-foreground ml-auto">
-                            {getHandicap(member!).toFixed(1)}
+                            CH: {getCourseHandicap(member!).toFixed(1)}
                           </span>
                         </div>
                       );
@@ -304,7 +343,7 @@ export const TeamSetupDialog = ({
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-semibold">Team 2</Label>
                   <span className="text-sm text-muted-foreground">
-                    +{Math.round(team2Handicap - minHandicap)} strokes
+                    +{team2Strokes} strokes
                   </span>
                 </div>
                 <div className="space-y-1 p-2 border border-border rounded-lg min-h-24 bg-accent/5">
@@ -326,7 +365,7 @@ export const TeamSetupDialog = ({
                           </div>
                           <span className="text-sm font-medium truncate">{member?.display_name || 'Player'}</span>
                           <span className="text-xs text-muted-foreground ml-auto">
-                            {getHandicap(member!).toFixed(1)}
+                            CH: {getCourseHandicap(member!).toFixed(1)}
                           </span>
                         </div>
                       );
@@ -364,7 +403,7 @@ export const TeamSetupDialog = ({
                           {member.display_name || 'Anonymous'}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Handicap: {getHandicap(member).toFixed(1)}
+                          Course Handicap: {getCourseHandicap(member).toFixed(1)}
                         </p>
                       </div>
                       <div className="flex gap-2">
