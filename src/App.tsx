@@ -8,6 +8,7 @@ import Onboarding from "./pages/Onboarding";
 import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
 import Profile from "./pages/Profile";
+import FriendProfile from "./pages/FriendProfile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import MainLayout from "./components/layout/MainLayout";
@@ -77,6 +78,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/:userId"
+        element={
+          <ProtectedRoute>
+            <FriendProfile />
           </ProtectedRoute>
         }
       />

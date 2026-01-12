@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, UserMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,16 +20,30 @@ interface FriendCardProps {
 }
 
 const FriendCard = ({ friend, onRemove }: FriendCardProps) => {
+  const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleRemove = () => {
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onRemove?.(friend.friendship_id);
     setConfirmOpen(false);
   };
 
+  const handleClick = () => {
+    navigate(`/profile/${friend.user_id}`);
+  };
+
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmOpen(true);
+  };
+
   return (
     <>
-      <div className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border group">
+      <div 
+        onClick={handleClick}
+        className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border group cursor-pointer hover:bg-secondary/30 transition-colors"
+      >
         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
           {friend.avatar_url ? (
             <img
@@ -52,7 +67,7 @@ const FriendCard = ({ friend, onRemove }: FriendCardProps) => {
             variant="ghost"
             size="icon"
             className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            onClick={() => setConfirmOpen(true)}
+            onClick={handleRemoveClick}
           >
             <UserMinus className="w-4 h-4" />
           </Button>
