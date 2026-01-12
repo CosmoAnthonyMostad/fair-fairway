@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trophy, User } from 'lucide-react';
+import { calculateGsiAdjustment } from '@/lib/handicap';
 
 interface Team {
   id: string;
@@ -34,6 +35,7 @@ interface ScoreEntryDialogProps {
 }
 
 // Update GSI for players after a match is completed
+// Uses conservative learning rate for stability
 const updatePlayerGSI = async (
   groupId: string,
   teams: Team[],
@@ -53,37 +55,35 @@ const updatePlayerGSI = async (
     if (!memberData || memberData.length === 0) return;
 
     // Count completed matches for each player to determine learning rate
-    const { data: matchCounts } = await supabase
-      .from('team_players')
-      .select('user_id, teams!inner(matches!inner(group_id, status))')
-      .in('user_id', allPlayerIds);
+    const { data: matchHistory } = await supabase
+      .from('matches')
+      .select('id, teams(team_players(user_id))')
+      .eq('group_id', groupId)
+      .eq('status', 'completed');
 
-    // Calculate rounds per player
+    // Calculate rounds per player in this group
     const playerRounds: Record<string, number> = {};
-    allPlayerIds.forEach(id => playerRounds[id] = 1); // Start at 1 for this match
+    allPlayerIds.forEach(id => { playerRounds[id] = 0; });
     
-    matchCounts?.forEach((mc: any) => {
-      if (mc.teams?.matches?.group_id === groupId && mc.teams?.matches?.status === 'completed') {
-        playerRounds[mc.user_id] = (playerRounds[mc.user_id] || 0) + 1;
-      }
+    matchHistory?.forEach((match: any) => {
+      match.teams?.forEach((team: any) => {
+        team.team_players?.forEach((tp: any) => {
+          if (playerRounds[tp.user_id] !== undefined) {
+            playerRounds[tp.user_id]++;
+          }
+        });
+      });
     });
 
-    // Partial round weight (18 holes = 100%, 9 holes = 50%, 6 holes = 33%)
-    const roundWeight = holesPlayed / 18;
-
-    // For stroke play with 2 players, adjust GSI based on margin
+    // For 2-team matches, adjust GSI based on margin
     if (teams.length === 2) {
       const team1 = teams.find(t => t.team_number === 1);
       const team2 = teams.find(t => t.team_number === 2);
       const net1 = netScores.find(ns => ns.teamId === team1?.id)?.netScore ?? 0;
       const net2 = netScores.find(ns => ns.teamId === team2?.id)?.netScore ?? 0;
       
-      // Margin: positive means team1 won (shot lower)
+      // Margin from team1 perspective: positive = team1 won by this many
       const margin = net2 - net1;
-      
-      // Expected margin based on current GSI difference should be 0 after handicaps
-      // If team1 wins by more than expected, their GSI should go down (better)
-      // If team1 loses, their GSI should go up (worse)
       
       for (const team of teams) {
         for (const player of team.players) {
@@ -91,26 +91,21 @@ const updatePlayerGSI = async (
           if (!member) continue;
 
           const currentGsi = member.gsi ?? 20;
-          const rounds = playerRounds[player.user_id] || 1;
+          const rounds = playerRounds[player.user_id] || 0;
           
-          // Adaptive learning rate: alpha = 2 / (n + 2), capped for stability
-          const alpha = Math.min(2 / (rounds + 2), 0.5);
-          
-          // Calculate adjustment: if you won, GSI goes down; if you lost, GSI goes up
-          // Margin is from team1's perspective, so adjust accordingly
-          let adjustment = 0;
+          // Score differential: how many strokes off from expected
+          // If team1 won (margin > 0), team1 players performed better than expected
+          // Expected is 0 (since handicaps should equalize)
+          let scoreDifferential = 0;
           if (team.team_number === 1) {
-            // Team 1: positive margin = won = lower GSI
-            adjustment = -margin * alpha * roundWeight * 0.5;
+            // Team 1 won by margin -> performed better -> negative differential (lower GSI)
+            scoreDifferential = -margin;
           } else {
-            // Team 2: positive margin (team1 won) = lost = higher GSI
-            adjustment = margin * alpha * roundWeight * 0.5;
+            // Team 2 lost by margin -> performed worse -> positive differential (higher GSI)
+            scoreDifferential = margin;
           }
           
-          // Cap adjustment at ±4 strokes per match
-          adjustment = Math.max(-4, Math.min(4, adjustment));
-          
-          const newGsi = Math.round((currentGsi + adjustment) * 10) / 10;
+          const newGsi = calculateGsiAdjustment(currentGsi, rounds, scoreDifferential, holesPlayed);
           
           // Update the member's GSI
           await supabase
