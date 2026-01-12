@@ -256,24 +256,79 @@ export const MatchDetailDialog = ({
     if (!photoFile || !matchInfo) return matchInfo?.photo_url || null;
 
     try {
+      // Get current user for folder path (RLS requires user_id as first folder)
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
       const fileExt = photoFile.name.split('.').pop();
-      const fileName = `${matchInfo.id}-${Date.now()}.${fileExt}`;
-      const filePath = `match-photos/${fileName}`;
+      const fileName = `match-${matchInfo.id}-${Date.now()}.${fileExt}`;
+      // Use user ID as first folder to satisfy storage RLS policy
+      const filePath = `${currentUser.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading photo to:', filePath);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('avatars')
-        .upload(filePath, photoFile);
+        .upload(filePath, photoFile, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      console.log('Public URL:', publicUrl);
+
       return publicUrl;
     } catch (error) {
       console.error('Error uploading photo:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload photo',
+        variant: 'destructive',
+      });
       return matchInfo?.photo_url || null;
+    }
+  };
+
+  const handleSavePhotoOnly = async () => {
+    if (!photoFile || !matchInfo) return;
+    
+    setIsSubmitting(true);
+    try {
+      const photoUrl = await uploadPhoto();
+      
+      if (photoUrl && photoUrl !== matchInfo.photo_url) {
+        const { error: matchError } = await supabase
+          .from('matches')
+          .update({ photo_url: photoUrl })
+          .eq('id', matchId);
+
+        if (matchError) throw matchError;
+
+        toast({
+          title: 'Success',
+          description: 'Photo saved!',
+        });
+        
+        setPhotoFile(null);
+        setIsEditingPhoto(false);
+        onMatchUpdated();
+      }
+    } catch (error: any) {
+      console.error('Error saving photo:', error);
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to save photo',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -437,9 +492,23 @@ export const MatchDetailDialog = ({
                     size="sm"
                     variant="ghost"
                     className="w-16 mt-1 text-xs h-6 px-1"
-                    onClick={() => setIsEditingPhoto(false)}
+                    onClick={() => {
+                      setIsEditingPhoto(false);
+                      setPhotoFile(null);
+                      setPhotoPreview(null);
+                    }}
                   >
                     Cancel
+                  </Button>
+                )}
+                {photoFile && (
+                  <Button
+                    size="sm"
+                    className="w-16 mt-1 text-xs h-6 px-1 gradient-primary text-primary-foreground"
+                    onClick={handleSavePhotoOnly}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? '...' : 'Save'}
                   </Button>
                 )}
               </div>
