@@ -51,14 +51,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary/90 via-primary to-primary-dark relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Subtle golf-themed decorative elements */}
-        <svg className="absolute bottom-0 left-0 w-full h-48 opacity-10" viewBox="0 0 400 200" fill="none">
-          <path d="M0 150 Q100 100 200 150 T400 150 L400 200 L0 200 Z" fill="currentColor" className="text-primary-foreground" />
-        </svg>
-      </div>
+    <div className="min-h-screen flex flex-col bg-primary relative overflow-hidden">
 
       {/* Logo header - bigger arching text, no flag */}
       <div className="flex items-center justify-center pt-16 pb-8 relative z-10">
