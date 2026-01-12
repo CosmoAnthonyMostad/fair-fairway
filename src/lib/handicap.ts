@@ -115,14 +115,17 @@ export const calculateGsiAdjustment = (
   holesPlayed: number = 18
 ): number => {
   // Conservative learning rate: alpha = 1 / (n + 3)
-  // n=1: 0.25, n=5: 0.125, n=10: 0.077
+  // n=0: 0.33, n=1: 0.25, n=5: 0.125, n=10: 0.077
   const alpha = 1 / (matchesPlayed + 3);
   
   // Partial round weight
   const roundWeight = holesPlayed / 18;
   
+  // Additional dampening factor for conservative movement
+  const dampeningFactor = 0.5;
+  
   // Calculate adjustment (capped at ±2 strokes)
-  const rawAdjustment = scoreDifferential * alpha * roundWeight;
+  const rawAdjustment = scoreDifferential * alpha * roundWeight * dampeningFactor;
   const cappedAdjustment = Math.max(-2, Math.min(2, rawAdjustment));
   
   // Apply adjustment
