@@ -434,7 +434,6 @@ const GroupDetail = () => {
                 key={match.id} 
                 match={match} 
                 onClick={() => handleMatchClick(match)}
-                onDelete={(e) => handleMatchDelete(match, e)}
               />
             ))}
           </div>
@@ -494,7 +493,18 @@ const GroupDetail = () => {
       <AddMembersDialog open={addMembersDialogOpen} onOpenChange={setAddMembersDialogOpen} groupId={groupId!} existingMemberIds={members.map(m => m.user_id)} onMembersAdded={fetchGroupDetails} />
       <CreateMatchDialog open={createMatchDialogOpen} onOpenChange={setCreateMatchDialogOpen} groupId={groupId!} onMatchCreated={fetchGroupDetails} />
       <TeamSetupDialog open={!!teamSetupMatchId} onOpenChange={(open) => !open && setTeamSetupMatchId(null)} matchId={teamSetupMatchId || ''} groupId={groupId!} format={teamSetupFormat} onTeamsCreated={fetchGroupDetails} />
-      <MatchDetailDialog open={!!matchDetailId} onOpenChange={(open) => !open && setMatchDetailId(null)} matchId={matchDetailId || ''} onMatchUpdated={fetchGroupDetails} />
+      <MatchDetailDialog 
+        open={!!matchDetailId} 
+        onOpenChange={(open) => !open && setMatchDetailId(null)} 
+        matchId={matchDetailId || ''} 
+        onMatchUpdated={fetchGroupDetails}
+        onDeleteMatch={(id) => {
+          const match = matches.find(m => m.id === id);
+          if (match) {
+            setDeleteMatchState({ id: id, courseName: match.course_name || 'Unknown Course' });
+          }
+        }}
+      />
 
       {/* Match Photos Dialog */}
       <Dialog open={photosDialogOpen} onOpenChange={setPhotosDialogOpen}>

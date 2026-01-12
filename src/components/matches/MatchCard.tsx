@@ -1,7 +1,8 @@
-import { Calendar, MapPin, Trophy, Crown, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Trophy, Crown, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { shareMatch } from '@/lib/share';
 
 interface Match {
   id: string;
@@ -18,7 +19,6 @@ interface Match {
 interface MatchCardProps {
   match: Match;
   onClick?: () => void;
-  onDelete?: (e: React.MouseEvent) => void;
 }
 
 const formatLabel = (format: string): string => {
@@ -34,8 +34,6 @@ const formatLabel = (format: string): string => {
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'completed':
-      return 'bg-success/10 text-success border-success/20';
     case 'in_progress':
       return 'bg-primary/10 text-primary border-primary/20';
     case 'pending':
@@ -46,8 +44,6 @@ const getStatusColor = (status: string) => {
 
 const getStatusLabel = (status: string) => {
   switch (status) {
-    case 'completed':
-      return 'Completed';
     case 'in_progress':
       return 'In Progress';
     case 'pending':
@@ -56,25 +52,27 @@ const getStatusLabel = (status: string) => {
   }
 };
 
-export const MatchCard = ({ match, onClick, onDelete }: MatchCardProps) => {
+export const MatchCard = ({ match, onClick }: MatchCardProps) => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await shareMatch({
+      courseName: match.course_name || 'Unknown Course',
+      format: formatLabel(match.format),
+      date: format(new Date(match.match_date), 'MMM d, yyyy'),
+      winnerNames: match.winner_names,
+    });
+  };
+
+  const showStatusBadge = match.status !== 'completed';
+  const showShareButton = match.status === 'completed';
+
   return (
     <div
       onClick={onClick}
-      className="bg-card rounded-lg border border-border p-4 hover:bg-secondary/30 transition-colors cursor-pointer relative group"
+      className="bg-card rounded-lg border border-border p-4 hover:bg-secondary/30 transition-colors cursor-pointer relative"
     >
-      {onDelete && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          onClick={onDelete}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      )}
-      
-      <div className="flex items-start justify-between mb-2 pr-8">
-        <div className="flex-1">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1 pr-2">
           <h3 className="font-semibold text-foreground">
             {match.course_name || 'Unknown Course'}
           </h3>
@@ -85,9 +83,21 @@ export const MatchCard = ({ match, onClick, onDelete }: MatchCardProps) => {
             </p>
           )}
         </div>
-        <Badge variant="outline" className={getStatusColor(match.status)}>
-          {getStatusLabel(match.status)}
-        </Badge>
+        {showStatusBadge && (
+          <Badge variant="outline" className={getStatusColor(match.status)}>
+            {getStatusLabel(match.status)}
+          </Badge>
+        )}
+        {showShareButton && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            onClick={handleShare}
+          >
+            <Share2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-4 text-sm text-muted-foreground">
