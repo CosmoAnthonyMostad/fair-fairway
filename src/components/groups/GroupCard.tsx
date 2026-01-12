@@ -1,19 +1,24 @@
 import { Users, ChevronRight, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import type { Group } from '@/hooks/useGroups';
 
 interface GroupCardProps {
   group: Group;
-  onClick?: () => void;
 }
 
-const GroupCard = ({ group, onClick }: GroupCardProps) => {
+const GroupCard = ({ group }: GroupCardProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isOwner = group.owner_id === user?.id;
 
+  const handleClick = () => {
+    navigate(`/groups/${group.id}`);
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className="w-full flex items-center gap-3 p-3 bg-card rounded-lg border border-border hover:border-primary/30 transition-colors text-left"
     >
       <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">

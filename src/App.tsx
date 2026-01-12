@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Onboarding from "./pages/Onboarding";
 import Groups from "./pages/Groups";
+import GroupDetail from "./pages/GroupDetail";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -60,6 +61,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Groups />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/groups/:groupId"
+        element={
+          <ProtectedRoute>
+            <GroupDetail />
           </ProtectedRoute>
         }
       />
