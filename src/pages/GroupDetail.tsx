@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AddMembersDialog } from '@/components/groups/AddMembersDialog';
 import { CreateMatchDialog } from '@/components/matches/CreateMatchDialog';
 import { TeamSetupDialog } from '@/components/matches/TeamSetupDialog';
-import { ScoreEntryDialog } from '@/components/matches/ScoreEntryDialog';
+import { MatchDetailDialog } from '@/components/matches/MatchDetailDialog';
 import { MatchCard } from '@/components/matches/MatchCard';
 import { 
   ArrowLeft, 
@@ -92,7 +92,7 @@ const GroupDetail = () => {
   const [createMatchDialogOpen, setCreateMatchDialogOpen] = useState(false);
   const [teamSetupMatchId, setTeamSetupMatchId] = useState<string | null>(null);
   const [teamSetupFormat, setTeamSetupFormat] = useState<string>('stroke');
-  const [scoreEntryMatchId, setScoreEntryMatchId] = useState<string | null>(null);
+  const [matchDetailId, setMatchDetailId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
 
   const isOwner = group?.owner_id === user?.id;
@@ -195,10 +195,12 @@ const GroupDetail = () => {
 
   const handleMatchClick = (match: Match) => {
     if (!match.has_teams) {
+      // No teams yet - open team setup
       setTeamSetupMatchId(match.id);
       setTeamSetupFormat(match.format);
-    } else if (match.status !== 'completed') {
-      setScoreEntryMatchId(match.id);
+    } else {
+      // Has teams - open match detail (works for pending and completed)
+      setMatchDetailId(match.id);
     }
   };
 
@@ -373,7 +375,7 @@ const GroupDetail = () => {
       <AddMembersDialog open={addMembersDialogOpen} onOpenChange={setAddMembersDialogOpen} groupId={groupId!} existingMemberIds={members.map(m => m.user_id)} onMembersAdded={fetchGroupDetails} />
       <CreateMatchDialog open={createMatchDialogOpen} onOpenChange={setCreateMatchDialogOpen} groupId={groupId!} onMatchCreated={fetchGroupDetails} />
       <TeamSetupDialog open={!!teamSetupMatchId} onOpenChange={(open) => !open && setTeamSetupMatchId(null)} matchId={teamSetupMatchId || ''} groupId={groupId!} format={teamSetupFormat} onTeamsCreated={fetchGroupDetails} />
-      <ScoreEntryDialog open={!!scoreEntryMatchId} onOpenChange={(open) => !open && setScoreEntryMatchId(null)} matchId={scoreEntryMatchId || ''} onScoresUpdated={fetchGroupDetails} />
+      <MatchDetailDialog open={!!matchDetailId} onOpenChange={(open) => !open && setMatchDetailId(null)} matchId={matchDetailId || ''} onMatchUpdated={fetchGroupDetails} />
     </div>
   );
 };
