@@ -1,6 +1,7 @@
-import { Calendar, MapPin, Trophy, Crown } from 'lucide-react';
+import { Calendar, MapPin, Trophy, Crown, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface Match {
   id: string;
@@ -17,6 +18,7 @@ interface Match {
 interface MatchCardProps {
   match: Match;
   onClick?: () => void;
+  onDelete?: (e: React.MouseEvent) => void;
 }
 
 const formatLabel = (format: string): string => {
@@ -54,13 +56,24 @@ const getStatusLabel = (status: string) => {
   }
 };
 
-export const MatchCard = ({ match, onClick }: MatchCardProps) => {
+export const MatchCard = ({ match, onClick, onDelete }: MatchCardProps) => {
   return (
     <div
       onClick={onClick}
-      className="bg-card rounded-lg border border-border p-4 hover:bg-secondary/30 transition-colors cursor-pointer"
+      className="bg-card rounded-lg border border-border p-4 hover:bg-secondary/30 transition-colors cursor-pointer relative group"
     >
-      <div className="flex items-start justify-between mb-2">
+      {onDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          onClick={onDelete}
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      )}
+      
+      <div className="flex items-start justify-between mb-2 pr-8">
         <div className="flex-1">
           <h3 className="font-semibold text-foreground">
             {match.course_name || 'Unknown Course'}
