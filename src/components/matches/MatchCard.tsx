@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Users, Trophy } from 'lucide-react';
+import { Calendar, MapPin, Trophy, Crown } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -11,6 +11,7 @@ interface Match {
   course_name?: string;
   course_city?: string;
   course_state?: string;
+  winner_names?: string[];
 }
 
 interface MatchCardProps {
@@ -20,11 +21,11 @@ interface MatchCardProps {
 
 const formatLabel = (format: string): string => {
   const labels: Record<string, string> = {
-    stroke: 'Stroke Play',
-    match: 'Match Play',
-    scramble: 'Scramble',
+    stroke_play: 'Stroke Play',
+    match_play: 'Match Play',
+    '2v2_scramble': 'Scramble',
     best_ball: 'Best Ball',
-    alternate_shot: 'Alternate Shot',
+    shamble: 'Shamble',
   };
   return labels[format] || format;
 };
@@ -85,10 +86,16 @@ export const MatchCard = ({ match, onClick }: MatchCardProps) => {
           <Trophy className="w-3.5 h-3.5" />
           {formatLabel(match.format)}
         </span>
-        <span className="flex items-center gap-1">
-          <Users className="w-3.5 h-3.5" />
-          {match.holes_played} holes
-        </span>
+        {match.status === 'completed' && match.winner_names && match.winner_names.length > 0 ? (
+          <span className="flex items-center gap-1 text-success">
+            <Crown className="w-3.5 h-3.5" />
+            {match.winner_names.join(' & ')}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/60">
+            {match.status === 'pending' ? 'Awaiting scores' : ''}
+          </span>
+        )}
       </div>
     </div>
   );

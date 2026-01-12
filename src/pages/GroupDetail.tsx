@@ -73,6 +73,7 @@ interface Match {
   course_city?: string;
   course_state?: string;
   has_teams?: boolean;
+  winner_names?: string[];
 }
 
 const GroupDetail = () => {
@@ -163,26 +164,57 @@ const GroupDetail = () => {
 
       if (matchesError) throw matchesError;
 
-      // Check which matches have teams
+      // Fetch teams with players for all matches
       const matchIds = (matchesData || []).map(m => m.id);
       const { data: teamsData } = await supabase
         .from('teams')
-        .select('match_id')
+        .select('id, match_id, is_winner, team_players(user_id)')
         .in('match_id', matchIds);
 
-      const matchesWithTeams = new Set((teamsData || []).map(t => t.match_id));
+      // Fetch all relevant profiles
+      const allPlayerIds = new Set<string>();
+      (teamsData || []).forEach((t: any) => {
+        t.team_players?.forEach((tp: any) => allPlayerIds.add(tp.user_id));
+      });
 
-      const matchesList = (matchesData || []).map(match => ({
-        id: match.id,
-        format: match.format,
-        holes_played: match.holes_played || 18,
-        match_date: match.match_date,
-        status: match.status,
-        course_name: (match.courses as any)?.name,
-        course_city: (match.courses as any)?.city,
-        course_state: (match.courses as any)?.state,
-        has_teams: matchesWithTeams.has(match.id),
-      }));
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', Array.from(allPlayerIds));
+
+      const profileMap = new Map((profilesData || []).map(p => [p.user_id, p.display_name]));
+
+      // Build matches with team info
+      const matchesWithTeams = new Set((teamsData || []).map((t: any) => t.match_id));
+
+      const matchesList = (matchesData || []).map(match => {
+        // Find winning team for this match
+        const matchTeams = (teamsData || []).filter((t: any) => t.match_id === match.id);
+        const winningTeam = matchTeams.find((t: any) => t.is_winner);
+        
+        let winnerNames: string[] = [];
+        if (winningTeam) {
+          winnerNames = (winningTeam.team_players || [])
+            .map((tp: any) => {
+              const name = profileMap.get(tp.user_id);
+              // Get first name only
+              return name?.split(' ')[0] || 'Unknown';
+            });
+        }
+
+        return {
+          id: match.id,
+          format: match.format,
+          holes_played: match.holes_played || 18,
+          match_date: match.match_date,
+          status: match.status,
+          course_name: (match.courses as any)?.name,
+          course_city: (match.courses as any)?.city,
+          course_state: (match.courses as any)?.state,
+          has_teams: matchesWithTeams.has(match.id),
+          winner_names: winnerNames,
+        };
+      });
 
       setMatches(matchesList);
     } catch (error: any) {
