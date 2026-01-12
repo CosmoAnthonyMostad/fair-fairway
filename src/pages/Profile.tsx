@@ -1,16 +1,28 @@
 import { useState } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Trophy, Target, Calendar, MapPin } from 'lucide-react';
+import { User, Trophy, Target, Calendar, MapPin, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
+import { format } from 'date-fns';
+
+const formatLabel = (matchFormat: string): string => {
+  const labels: Record<string, string> = {
+    stroke_play: 'Stroke',
+    match_play: 'Match',
+    '2v2_scramble': 'Scramble',
+    best_ball: 'Best Ball',
+    shamble: 'Shamble',
+  };
+  return labels[matchFormat] || matchFormat;
+};
 
 const Profile = () => {
   const { user } = useAuth();
-  const { profile, loading, updateProfile, uploadAvatar } = useProfile();
+  const { profile, recentMatches, loading, updateProfile, uploadAvatar } = useProfile();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  // Win rate = wins / rounds (ties excluded from calculation happens at data level)
+  // Win rate = wins / rounds
   const winRate = profile?.total_rounds && profile.total_rounds > 0 
     ? Math.round((profile.total_wins || 0) / profile.total_rounds * 100) 
     : 0;
@@ -81,11 +93,52 @@ const Profile = () => {
         <h2 className="font-display text-lg font-semibold text-foreground mb-3">
           Recent Activity
         </h2>
-        <div className="bg-card rounded-lg border border-border p-8 text-center">
-          <p className="text-muted-foreground">
-            No recent activity. Play a match to see your stats!
-          </p>
-        </div>
+        {recentMatches.length > 0 ? (
+          <div className="space-y-2">
+            {recentMatches.map((match) => (
+              <div 
+                key={match.id} 
+                className="bg-card rounded-lg border border-border p-3 flex items-center gap-3"
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  match.is_winner 
+                    ? 'bg-success/10 text-success' 
+                    : 'bg-destructive/10 text-destructive'
+                }`}>
+                  {match.is_winner ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <X className="w-5 h-5" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground text-sm truncate">
+                    {match.course_name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(match.match_date), 'MMM d, yyyy')} • {formatLabel(match.format)}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className={`font-semibold ${match.is_winner ? 'text-success' : 'text-destructive'}`}>
+                    {match.is_winner ? 'Won' : 'Lost'}
+                  </p>
+                  {match.score !== null && match.opponent_score !== null && (
+                    <p className="text-xs text-muted-foreground">
+                      {match.score} - {match.opponent_score}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg border border-border p-8 text-center">
+            <p className="text-muted-foreground">
+              No recent activity. Play a match to see your stats!
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Edit Profile Button */}
