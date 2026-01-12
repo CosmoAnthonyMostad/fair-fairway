@@ -310,7 +310,10 @@ const GroupDetail = () => {
                   {member.user_id === group.owner_id && <Crown className="w-4 h-4 text-accent flex-shrink-0" />}
                   {member.user_id === user?.id && <span className="text-xs text-muted-foreground">(You)</span>}
                 </div>
-                {member.ghi !== null && <p className="text-sm text-muted-foreground">GHI: {member.ghi === 0 ? '0' : `+${member.ghi}`}</p>}
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm text-muted-foreground">Group Handicap:</p>
+                <p className="font-semibold text-foreground">{member.gsi !== null ? member.gsi : 'N/A'}</p>
               </div>
             </div>
           ))}
