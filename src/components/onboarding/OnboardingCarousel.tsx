@@ -89,39 +89,93 @@ const FriendsIllustration = () => (
   </svg>
 );
 
-const PaperPencilIllustration = () => (
+const ScorecardIllustration = () => (
   <svg viewBox="0 0 200 200" className="w-full h-full">
-    {/* Paper shadow */}
-    <rect x="45" y="35" width="120" height="150" rx="4" className="fill-foreground/10" transform="translate(4, 4)" />
+    {/* Scorecard shadow */}
+    <rect x="30" y="30" width="140" height="145" rx="4" className="fill-foreground/10" transform="translate(4, 4)" />
     
-    {/* Paper */}
-    <rect x="45" y="35" width="120" height="150" rx="4" className="fill-white" />
-    <rect x="45" y="35" width="120" height="150" rx="4" className="fill-none stroke-foreground/20" strokeWidth="2" />
+    {/* Scorecard paper */}
+    <rect x="30" y="30" width="140" height="145" rx="4" className="fill-white" />
+    <rect x="30" y="30" width="140" height="145" rx="4" className="fill-none stroke-foreground/20" strokeWidth="2" />
     
-    {/* Paper fold corner */}
-    <path d="M145 35 L165 35 L165 55 Z" className="fill-muted" />
-    <path d="M145 35 L145 55 L165 55" className="fill-none stroke-foreground/20" strokeWidth="1" />
+    {/* Header row */}
+    <rect x="30" y="30" width="140" height="22" rx="4" className="fill-primary/20" />
+    <text x="100" y="45" textAnchor="middle" className="fill-primary text-[10px] font-bold">SCORECARD</text>
     
-    {/* Scribble lines - like handwriting */}
-    <path d="M60 60 Q80 55 100 60 Q120 65 140 58" className="fill-none stroke-primary" strokeWidth="3" strokeLinecap="round" />
-    <path d="M60 80 Q85 75 110 82 Q130 88 145 78" className="fill-none stroke-primary/70" strokeWidth="3" strokeLinecap="round" />
-    <path d="M60 100 Q75 95 95 102 Q115 108 130 98" className="fill-none stroke-primary" strokeWidth="3" strokeLinecap="round" />
-    <path d="M60 120 Q90 115 120 122 Q140 128 150 118" className="fill-none stroke-primary/70" strokeWidth="3" strokeLinecap="round" />
-    <path d="M60 140 Q80 135 100 142 Q115 148 125 140" className="fill-none stroke-primary" strokeWidth="3" strokeLinecap="round" />
-    <path d="M60 160 Q70 155 85 162" className="fill-none stroke-primary/70" strokeWidth="3" strokeLinecap="round" />
+    {/* Column headers */}
+    <line x1="60" y1="52" x2="60" y2="175" className="stroke-foreground/15" strokeWidth="1" />
+    <line x1="90" y1="52" x2="90" y2="175" className="stroke-foreground/15" strokeWidth="1" />
+    <line x1="120" y1="52" x2="120" y2="175" className="stroke-foreground/15" strokeWidth="1" />
+    <line x1="150" y1="52" x2="150" y2="175" className="stroke-foreground/15" strokeWidth="1" />
+    
+    {/* Row dividers */}
+    <line x1="30" y1="70" x2="170" y2="70" className="stroke-foreground/15" strokeWidth="1" />
+    <line x1="30" y1="90" x2="170" y2="90" className="stroke-foreground/15" strokeWidth="1" />
+    <line x1="30" y1="110" x2="170" y2="110" className="stroke-foreground/15" strokeWidth="1" />
+    <line x1="30" y1="130" x2="170" y2="130" className="stroke-foreground/15" strokeWidth="1" />
+    <line x1="30" y1="150" x2="170" y2="150" className="stroke-foreground/15" strokeWidth="1" />
+    
+    {/* Column labels */}
+    <text x="45" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">HOLE</text>
+    <text x="75" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">PAR</text>
+    <text x="105" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">YOU</text>
+    <text x="135" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">NET</text>
+    <text x="160" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">+/-</text>
+    
+    {/* Hole numbers */}
+    <text x="45" y="84" textAnchor="middle" className="fill-foreground/70 text-[9px]">1</text>
+    <text x="45" y="104" textAnchor="middle" className="fill-foreground/70 text-[9px]">2</text>
+    <text x="45" y="124" textAnchor="middle" className="fill-foreground/70 text-[9px]">3</text>
+    <text x="45" y="144" textAnchor="middle" className="fill-foreground/70 text-[9px]">4</text>
+    
+    {/* Par values */}
+    <text x="75" y="84" textAnchor="middle" className="fill-foreground/60 text-[9px]">4</text>
+    <text x="75" y="104" textAnchor="middle" className="fill-foreground/60 text-[9px]">3</text>
+    <text x="75" y="124" textAnchor="middle" className="fill-foreground/60 text-[9px]">5</text>
+    <text x="75" y="144" textAnchor="middle" className="fill-foreground/60 text-[9px]">4</text>
+    
+    {/* Scores - handwritten style */}
+    <text x="105" y="84" textAnchor="middle" className="fill-primary text-[9px] font-semibold">5</text>
+    <text x="105" y="104" textAnchor="middle" className="fill-primary text-[9px] font-semibold">3</text>
+    <text x="105" y="124" textAnchor="middle" className="fill-primary text-[9px] font-semibold">6</text>
+    <text x="105" y="144" textAnchor="middle" className="fill-primary text-[9px] font-semibold">4</text>
+    
+    {/* Net scores */}
+    <text x="135" y="84" textAnchor="middle" className="fill-primary/70 text-[9px]">4</text>
+    <text x="135" y="104" textAnchor="middle" className="fill-primary/70 text-[9px]">3</text>
+    <text x="135" y="124" textAnchor="middle" className="fill-primary/70 text-[9px]">5</text>
+    <text x="135" y="144" textAnchor="middle" className="fill-primary/70 text-[9px]">4</text>
+    
+    {/* Plus/minus indicators */}
+    <circle cx="160" cy="81" r="6" className="fill-red-100" />
+    <text x="160" y="84" textAnchor="middle" className="fill-red-500 text-[7px]">+1</text>
+    <circle cx="160" cy="101" r="6" className="fill-primary/20" />
+    <text x="160" y="104" textAnchor="middle" className="fill-primary text-[7px]">E</text>
+    <circle cx="160" cy="121" r="6" className="fill-red-100" />
+    <text x="160" y="124" textAnchor="middle" className="fill-red-500 text-[7px]">+1</text>
+    <circle cx="160" cy="141" r="6" className="fill-primary/20" />
+    <text x="160" y="144" textAnchor="middle" className="fill-primary text-[7px]">E</text>
+    
+    {/* Total row */}
+    <rect x="30" y="150" width="140" height="25" className="fill-muted/50" />
+    <text x="45" y="166" textAnchor="middle" className="fill-foreground/70 text-[8px] font-semibold">TOT</text>
+    <text x="75" y="166" textAnchor="middle" className="fill-foreground/60 text-[9px]">16</text>
+    <text x="105" y="166" textAnchor="middle" className="fill-primary text-[9px] font-bold">18</text>
+    <text x="135" y="166" textAnchor="middle" className="fill-primary/70 text-[9px]">16</text>
+    <text x="160" y="166" textAnchor="middle" className="fill-red-500 text-[8px]">+2</text>
     
     {/* Pencil */}
-    <g transform="translate(130, 120) rotate(35)">
+    <g transform="translate(145, 130) rotate(25)">
       {/* Pencil body */}
-      <rect x="0" y="0" width="60" height="12" className="fill-accent" />
+      <rect x="0" y="0" width="50" height="10" className="fill-accent" />
       {/* Pencil wood/tip */}
-      <path d="M60 0 L75 6 L60 12 Z" className="fill-accent/60" />
+      <path d="M50 0 L62 5 L50 10 Z" className="fill-accent/60" />
       {/* Pencil point */}
-      <path d="M72 4 L80 6 L72 8 Z" className="fill-foreground/70" />
+      <path d="M60 3 L68 5 L60 7 Z" className="fill-foreground/70" />
       {/* Pencil eraser */}
-      <rect x="-8" y="1" width="10" height="10" rx="1" className="fill-primary/60" />
+      <rect x="-7" y="1" width="8" height="8" rx="1" className="fill-primary/60" />
       {/* Pencil metal band */}
-      <rect x="-2" y="0" width="4" height="12" className="fill-foreground/30" />
+      <rect x="-2" y="0" width="4" height="10" className="fill-foreground/30" />
     </g>
   </svg>
 );
@@ -160,7 +214,7 @@ const OnboardingCarousel = ({ onComplete }: OnboardingCarouselProps) => {
     {
       title: "Track Matches & Build Fair Handicaps",
       description: "Record your matches and let the app calculate fair handicaps that improve over time.",
-      illustration: <PaperPencilIllustration />,
+      illustration: <ScorecardIllustration />,
     },
   ];
 
