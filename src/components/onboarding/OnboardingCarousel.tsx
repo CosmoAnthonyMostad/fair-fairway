@@ -92,90 +92,102 @@ const FriendsIllustration = () => (
 const ScorecardIllustration = () => (
   <svg viewBox="0 0 200 200" className="w-full h-full">
     {/* Scorecard shadow */}
-    <rect x="30" y="30" width="140" height="145" rx="4" className="fill-foreground/10" transform="translate(4, 4)" />
+    <rect x="15" y="45" width="170" height="110" rx="3" className="fill-foreground/10" transform="translate(3, 3)" />
     
-    {/* Scorecard paper */}
-    <rect x="30" y="30" width="140" height="145" rx="4" className="fill-white" />
-    <rect x="30" y="30" width="140" height="145" rx="4" className="fill-none stroke-foreground/20" strokeWidth="2" />
+    {/* Scorecard paper - landscape orientation like real scorecards */}
+    <rect x="15" y="45" width="170" height="110" rx="3" className="fill-white" />
+    <rect x="15" y="45" width="170" height="110" rx="3" className="fill-none stroke-foreground/20" strokeWidth="1.5" />
     
-    {/* Header row */}
-    <rect x="30" y="30" width="140" height="22" rx="4" className="fill-primary/20" />
-    <text x="100" y="45" textAnchor="middle" className="fill-primary text-[10px] font-bold">SCORECARD</text>
+    {/* Course name header area */}
+    <rect x="15" y="45" width="170" height="16" rx="3" className="fill-primary/15" />
+    <text x="100" y="56" textAnchor="middle" className="fill-primary text-[8px] font-bold">PINE VALLEY GOLF CLUB</text>
     
-    {/* Column headers */}
-    <line x1="60" y1="52" x2="60" y2="175" className="stroke-foreground/15" strokeWidth="1" />
-    <line x1="90" y1="52" x2="90" y2="175" className="stroke-foreground/15" strokeWidth="1" />
-    <line x1="120" y1="52" x2="120" y2="175" className="stroke-foreground/15" strokeWidth="1" />
-    <line x1="150" y1="52" x2="150" y2="175" className="stroke-foreground/15" strokeWidth="1" />
+    {/* Hole number row - header */}
+    <rect x="15" y="61" width="25" height="12" className="fill-muted/60" />
+    <text x="27" y="70" textAnchor="middle" className="fill-foreground/60 text-[6px] font-semibold">HOLE</text>
     
-    {/* Row dividers */}
-    <line x1="30" y1="70" x2="170" y2="70" className="stroke-foreground/15" strokeWidth="1" />
-    <line x1="30" y1="90" x2="170" y2="90" className="stroke-foreground/15" strokeWidth="1" />
-    <line x1="30" y1="110" x2="170" y2="110" className="stroke-foreground/15" strokeWidth="1" />
-    <line x1="30" y1="130" x2="170" y2="130" className="stroke-foreground/15" strokeWidth="1" />
-    <line x1="30" y1="150" x2="170" y2="150" className="stroke-foreground/15" strokeWidth="1" />
+    {/* Hole numbers 1-9 */}
+    {[1,2,3,4,5,6,7,8,9].map((num, i) => (
+      <g key={num}>
+        <rect x={40 + i * 16} y="61" width="16" height="12" className="fill-muted/40" />
+        <text x={48 + i * 16} y="70" textAnchor="middle" className="fill-foreground/70 text-[7px] font-semibold">{num}</text>
+      </g>
+    ))}
     
-    {/* Column labels */}
-    <text x="45" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">HOLE</text>
-    <text x="75" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">PAR</text>
-    <text x="105" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">YOU</text>
-    <text x="135" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">NET</text>
-    <text x="160" y="64" textAnchor="middle" className="fill-foreground/50 text-[7px]">+/-</text>
+    {/* Yardage row */}
+    <rect x="15" y="73" width="25" height="11" className="fill-white" />
+    <text x="27" y="81" textAnchor="middle" className="fill-foreground/50 text-[5px]">YDS</text>
+    {[399, 307, 196, 141, 179, 213, 368, 79, 377].map((yds, i) => (
+      <g key={i}>
+        <rect x={40 + i * 16} y="73" width="16" height="11" className="fill-white" />
+        <text x={48 + i * 16} y="81" textAnchor="middle" className="fill-foreground/40 text-[5px]">{yds}</text>
+      </g>
+    ))}
     
-    {/* Hole numbers */}
-    <text x="45" y="84" textAnchor="middle" className="fill-foreground/70 text-[9px]">1</text>
-    <text x="45" y="104" textAnchor="middle" className="fill-foreground/70 text-[9px]">2</text>
-    <text x="45" y="124" textAnchor="middle" className="fill-foreground/70 text-[9px]">3</text>
-    <text x="45" y="144" textAnchor="middle" className="fill-foreground/70 text-[9px]">4</text>
+    {/* Par row */}
+    <rect x="15" y="84" width="25" height="11" className="fill-primary/10" />
+    <text x="27" y="92" textAnchor="middle" className="fill-primary/70 text-[5px] font-semibold">PAR</text>
+    {[4, 4, 3, 3, 4, 4, 5, 3, 4].map((par, i) => (
+      <g key={i}>
+        <rect x={40 + i * 16} y="84" width="16" height="11" className="fill-primary/10" />
+        <text x={48 + i * 16} y="92" textAnchor="middle" className="fill-primary text-[6px] font-semibold">{par}</text>
+      </g>
+    ))}
     
-    {/* Par values */}
-    <text x="75" y="84" textAnchor="middle" className="fill-foreground/60 text-[9px]">4</text>
-    <text x="75" y="104" textAnchor="middle" className="fill-foreground/60 text-[9px]">3</text>
-    <text x="75" y="124" textAnchor="middle" className="fill-foreground/60 text-[9px]">5</text>
-    <text x="75" y="144" textAnchor="middle" className="fill-foreground/60 text-[9px]">4</text>
+    {/* Handicap row */}
+    <rect x="15" y="95" width="25" height="11" className="fill-white" />
+    <text x="27" y="103" textAnchor="middle" className="fill-foreground/50 text-[5px]">HCP</text>
+    {[3, 1, 9, 13, 7, 5, 11, 17, 15].map((hcp, i) => (
+      <g key={i}>
+        <rect x={40 + i * 16} y="95" width="16" height="11" className="fill-white" />
+        <text x={48 + i * 16} y="103" textAnchor="middle" className="fill-foreground/40 text-[5px]">{hcp}</text>
+      </g>
+    ))}
     
-    {/* Scores - handwritten style */}
-    <text x="105" y="84" textAnchor="middle" className="fill-primary text-[9px] font-semibold">5</text>
-    <text x="105" y="104" textAnchor="middle" className="fill-primary text-[9px] font-semibold">3</text>
-    <text x="105" y="124" textAnchor="middle" className="fill-primary text-[9px] font-semibold">6</text>
-    <text x="105" y="144" textAnchor="middle" className="fill-primary text-[9px] font-semibold">4</text>
+    {/* Player 1 score row */}
+    <rect x="15" y="106" width="25" height="14" className="fill-accent/10" />
+    <text x="27" y="115" textAnchor="middle" className="fill-accent text-[5px] font-semibold">PLAYER</text>
+    {[5, 4, 3, 4, 5, 4, 6, 3, 5].map((score, i) => (
+      <g key={i}>
+        <rect x={40 + i * 16} y="106" width="16" height="14" className="fill-accent/5" />
+        <text x={48 + i * 16} y="116" textAnchor="middle" className="fill-foreground/80 text-[8px] font-semibold">{score}</text>
+      </g>
+    ))}
     
-    {/* Net scores */}
-    <text x="135" y="84" textAnchor="middle" className="fill-primary/70 text-[9px]">4</text>
-    <text x="135" y="104" textAnchor="middle" className="fill-primary/70 text-[9px]">3</text>
-    <text x="135" y="124" textAnchor="middle" className="fill-primary/70 text-[9px]">5</text>
-    <text x="135" y="144" textAnchor="middle" className="fill-primary/70 text-[9px]">4</text>
+    {/* Player 2 score row */}
+    <rect x="15" y="120" width="25" height="14" className="fill-primary/10" />
+    <text x="27" y="129" textAnchor="middle" className="fill-primary text-[5px] font-semibold">PLAYER</text>
+    {[4, 5, 4, 3, 4, 5, 5, 4, 4].map((score, i) => (
+      <g key={i}>
+        <rect x={40 + i * 16} y="120" width="16" height="14" className="fill-primary/5" />
+        <text x={48 + i * 16} y="130" textAnchor="middle" className="fill-foreground/80 text-[8px] font-semibold">{score}</text>
+      </g>
+    ))}
     
-    {/* Plus/minus indicators */}
-    <circle cx="160" cy="81" r="6" className="fill-red-100" />
-    <text x="160" y="84" textAnchor="middle" className="fill-red-500 text-[7px]">+1</text>
-    <circle cx="160" cy="101" r="6" className="fill-primary/20" />
-    <text x="160" y="104" textAnchor="middle" className="fill-primary text-[7px]">E</text>
-    <circle cx="160" cy="121" r="6" className="fill-red-100" />
-    <text x="160" y="124" textAnchor="middle" className="fill-red-500 text-[7px]">+1</text>
-    <circle cx="160" cy="141" r="6" className="fill-primary/20" />
-    <text x="160" y="144" textAnchor="middle" className="fill-primary text-[7px]">E</text>
+    {/* Grid lines */}
+    <line x1="40" y1="61" x2="40" y2="134" className="stroke-foreground/10" strokeWidth="0.5" />
+    {[1,2,3,4,5,6,7,8,9].map((_, i) => (
+      <line key={i} x1={56 + i * 16} y1="61" x2={56 + i * 16} y2="134" className="stroke-foreground/10" strokeWidth="0.5" />
+    ))}
     
-    {/* Total row */}
-    <rect x="30" y="150" width="140" height="25" className="fill-muted/50" />
-    <text x="45" y="166" textAnchor="middle" className="fill-foreground/70 text-[8px] font-semibold">TOT</text>
-    <text x="75" y="166" textAnchor="middle" className="fill-foreground/60 text-[9px]">16</text>
-    <text x="105" y="166" textAnchor="middle" className="fill-primary text-[9px] font-bold">18</text>
-    <text x="135" y="166" textAnchor="middle" className="fill-primary/70 text-[9px]">16</text>
-    <text x="160" y="166" textAnchor="middle" className="fill-red-500 text-[8px]">+2</text>
+    {/* Out total box */}
+    <rect x="15" y="134" width="25" height="12" className="fill-muted/60" />
+    <text x="27" y="143" textAnchor="middle" className="fill-foreground/60 text-[6px] font-semibold">OUT</text>
+    <rect x="40" y="134" width="144" height="12" className="fill-muted/30" />
+    <text x="165" y="143" textAnchor="middle" className="fill-foreground/70 text-[7px] font-bold">39</text>
     
-    {/* Pencil */}
-    <g transform="translate(145, 130) rotate(25)">
+    {/* Pencil - angled across the card */}
+    <g transform="translate(130, 95) rotate(20)">
       {/* Pencil body */}
-      <rect x="0" y="0" width="50" height="10" className="fill-accent" />
+      <rect x="0" y="0" width="55" height="9" className="fill-accent" />
       {/* Pencil wood/tip */}
-      <path d="M50 0 L62 5 L50 10 Z" className="fill-accent/60" />
+      <path d="M55 0 L66 4.5 L55 9 Z" className="fill-accent/60" />
       {/* Pencil point */}
-      <path d="M60 3 L68 5 L60 7 Z" className="fill-foreground/70" />
+      <path d="M64 2.5 L72 4.5 L64 6.5 Z" className="fill-foreground/70" />
       {/* Pencil eraser */}
-      <rect x="-7" y="1" width="8" height="8" rx="1" className="fill-primary/60" />
+      <rect x="-6" y="1" width="7" height="7" rx="1" className="fill-primary/60" />
       {/* Pencil metal band */}
-      <rect x="-2" y="0" width="4" height="10" className="fill-foreground/30" />
+      <rect x="-1" y="0" width="3" height="9" className="fill-foreground/30" />
     </g>
   </svg>
 );
