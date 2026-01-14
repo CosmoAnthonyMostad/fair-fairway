@@ -119,19 +119,14 @@ export const useFriends = () => {
 
   const searchUserByEmail = async (email: string) => {
     try {
-      // First check if there's a user with this email
-      const { data: authData } = await supabase.auth.admin?.listUsers?.() || { data: null };
-      
-      // Since we can't access auth.users, we search profiles
-      // Users need to have set up their profile with a display_name that matches or search by email pattern
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('*');
+      // Use secure RPC function to search by email without exposing emails
+      const { data: profile, error } = await supabase
+        .rpc('search_user_by_email', { search_email: email });
 
       if (error) throw error;
 
       // Filter out current user and existing friends
-      const filteredProfiles = (profiles || []).filter(p => {
+      const filteredProfiles = (profile || []).filter((p: any) => {
         if (p.user_id === user?.id) return false;
         if (friends.some(f => f.user_id === p.user_id)) return false;
         return true;

@@ -375,7 +375,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          home_city: string | null
+          id: string | null
+          phi: number | null
+          total_rounds: number | null
+          total_wins: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          home_city?: string | null
+          id?: string | null
+          phi?: number | null
+          total_rounds?: number | null
+          total_wins?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          home_city?: string | null
+          id?: string | null
+          phi?: number | null
+          total_rounds?: number | null
+          total_wins?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_group_member: {
@@ -385,6 +423,21 @@ export type Database = {
       is_group_owner: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
+      }
+      search_user_by_email: {
+        Args: { search_email: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          home_city: string
+          id: string
+          phi: number
+          total_rounds: number
+          total_wins: number
+          updated_at: string
+          user_id: string
+        }[]
       }
     }
     Enums: {
