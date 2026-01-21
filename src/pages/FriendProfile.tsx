@@ -172,10 +172,10 @@ const FriendProfile = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="gradient-primary px-4 py-4">
+      <header className="gradient-primary px-4 pb-4 pt-safe">
         <button 
           onClick={() => navigate(-1)} 
-          className="p-2 rounded-full hover:bg-primary-foreground/10 transition-colors mb-2"
+          className="p-2 mt-4 rounded-full hover:bg-primary-foreground/10 transition-colors mb-2"
         >
           <ArrowLeft className="w-6 h-6 text-primary-foreground" />
         </button>

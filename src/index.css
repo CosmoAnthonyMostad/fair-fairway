@@ -137,4 +137,16 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }

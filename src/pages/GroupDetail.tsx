@@ -352,17 +352,17 @@ const GroupDetail = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="gradient-primary px-4 py-4 flex items-center gap-3">
-        <button onClick={() => navigate('/groups')} className="p-2 rounded-full hover:bg-primary-foreground/10 transition-colors">
+      <header className="gradient-primary px-4 pb-4 pt-safe flex items-center gap-3">
+        <button onClick={() => navigate('/groups')} className="p-2 mt-4 rounded-full hover:bg-primary-foreground/10 transition-colors">
           <ArrowLeft className="w-6 h-6 text-primary-foreground" />
         </button>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 mt-4">
           <h1 className="font-display text-xl font-bold text-primary-foreground truncate">{group.name}</h1>
           <p className="text-primary-foreground/80 text-sm">{members.length} {members.length === 1 ? 'member' : 'members'}</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="p-2 rounded-full hover:bg-primary-foreground/10 transition-colors">
+            <button className="p-2 mt-4 rounded-full hover:bg-primary-foreground/10 transition-colors">
               <MoreVertical className="w-6 h-6 text-primary-foreground" />
             </button>
           </DropdownMenuTrigger>

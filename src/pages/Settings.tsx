@@ -49,8 +49,8 @@ const Settings = () => {
   return (
     <>
       {/* Header */}
-      <header className="gradient-primary px-4 py-4">
-        <h1 className="font-display text-xl font-bold text-primary-foreground">
+      <header className="gradient-primary px-4 pb-4 pt-safe">
+        <h1 className="font-display text-xl font-bold text-primary-foreground pt-4">
           Settings
         </h1>
       </header>

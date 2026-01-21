@@ -238,7 +238,7 @@ const OnboardingCarousel = ({ onComplete }: OnboardingCarouselProps) => {
           {slides.map((slide, index) => (
             <div key={index} className="flex-none w-full h-full flex flex-col">
               {/* Illustration area with solid background */}
-              <div className="flex-1 flex items-center justify-center bg-muted px-12 pt-16">
+              <div className="flex-1 flex items-center justify-center bg-muted px-12 pt-safe">
                 <div className="w-56 h-56">
                   {slide.illustration}
                 </div>

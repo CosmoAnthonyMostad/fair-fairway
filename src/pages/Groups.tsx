@@ -39,8 +39,8 @@ const Groups = () => {
   return (
     <>
       {/* Header */}
-      <header className="gradient-primary px-4 py-4 flex items-center justify-between">
-        <h1 className="font-display text-xl font-bold text-primary-foreground">
+      <header className="gradient-primary px-4 pb-4 pt-safe flex items-center justify-between">
+        <h1 className="font-display text-xl font-bold text-primary-foreground pt-4">
           Groups & Friends
         </h1>
         <NotificationsPanel

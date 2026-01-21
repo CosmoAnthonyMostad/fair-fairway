@@ -38,8 +38,8 @@ const Profile = () => {
   return (
     <>
       {/* Header */}
-      <header className="gradient-primary px-4 py-6 text-center">
-        <div className="w-24 h-24 mx-auto mb-3 rounded-full bg-primary-foreground/20 flex items-center justify-center border-4 border-primary-foreground/30 overflow-hidden">
+      <header className="gradient-primary px-4 pb-6 pt-safe text-center">
+        <div className="w-24 h-24 mx-auto mb-3 mt-4 rounded-full bg-primary-foreground/20 flex items-center justify-center border-4 border-primary-foreground/30 overflow-hidden">
           {profile?.avatar_url ? (
             <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
