@@ -69,7 +69,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Big Bubble Letters Header */}
-      <div className="relative z-10 pt-safe pb-4 text-center px-4 mt-6">
+      <div className="relative z-10 pt-safe pb-4 text-center px-4 mt-12">
         {/* Welcome */}
         <h1 
           className="text-6xl sm:text-7xl font-black tracking-tight leading-none"
