@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, User, ArrowRight, ChevronLeft } from 'lucide-react';
+import golfHoleBackground from '@/assets/golf-hole-background.jpg';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -75,52 +76,86 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-primary relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${golfHoleBackground})` }}
+      />
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/20" />
 
-      {/* Logo header - bigger arching text, no flag */}
-      <div className="flex items-center justify-center pt-16 pb-8 relative z-10">
-        <svg viewBox="0 0 300 80" className="w-80 h-24">
-          <defs>
-            <path id="textArc" d="M 20 65 Q 150 5 280 65" fill="none" />
-          </defs>
-          <text className="fill-primary-foreground font-display font-bold" style={{ fontSize: '42px' }}>
-            <textPath href="#textArc" startOffset="50%" textAnchor="middle">
-              GOLF APP
-            </textPath>
-          </text>
-        </svg>
+      {/* Big Bubble Letters Header */}
+      <div className="relative z-10 pt-12 pb-4 text-center px-4">
+        {/* Welcome */}
+        <h1 
+          className="text-5xl sm:text-6xl font-black tracking-tight leading-none"
+          style={{
+            fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif",
+            color: 'white',
+            textShadow: '3px 3px 0 #166534, -1px -1px 0 #166534, 1px -1px 0 #166534, -1px 1px 0 #166534, 4px 4px 8px rgba(0,0,0,0.4)',
+            WebkitTextStroke: '2px #166534',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          Welcome
+        </h1>
+        
+        {/* to the */}
+        <h2 
+          className="text-3xl sm:text-4xl font-bold mt-1"
+          style={{
+            fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif",
+            color: 'white',
+            textShadow: '2px 2px 0 #166534, -1px -1px 0 #166534, 1px -1px 0 #166534, -1px 1px 0 #166534, 3px 3px 6px rgba(0,0,0,0.4)',
+            WebkitTextStroke: '1.5px #166534',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          to the
+        </h2>
+        
+        {/* Golf App */}
+        <h1 
+          className="text-5xl sm:text-6xl font-black tracking-tight mt-1"
+          style={{
+            fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif",
+            color: 'white',
+            textShadow: '3px 3px 0 #166534, -1px -1px 0 #166534, 1px -1px 0 #166534, -1px 1px 0 #166534, 4px 4px 8px rgba(0,0,0,0.4)',
+            WebkitTextStroke: '2px #166534',
+            paintOrder: 'stroke fill',
+          }}
+        >
+          Golf App
+        </h1>
       </div>
 
-      {/* Main content - centered vertically */}
-      <div className="flex-1 flex flex-col justify-center px-6 pb-8 relative z-10">
-        {/* Welcome text */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-display font-bold text-primary-foreground mb-3">
-            {showEmailForm 
-              ? (isLogin ? 'Welcome back!' : 'Create account')
-              : 'Join the fairway'}
-          </h2>
-          <p className="text-primary-foreground/80 text-base max-w-xs mx-auto">
-            {showEmailForm
-              ? (isLogin ? 'Sign in to continue tracking your golf matches' : 'Enter your details to get started')
-              : 'Track matches and build fair handicaps with friends'}
-          </p>
-        </div>
+      {/* Spacer to push form towards bottom */}
+      <div className="flex-1" />
 
-        {/* Form card */}
+      {/* Form Section at Bottom */}
+      <div className="relative z-10 px-6 pb-8">
         <div className="w-full max-w-sm mx-auto">
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/20 p-6">
+          {/* Form card with glass effect */}
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/30 p-6">
             
+            {/* Create Account / Sign In header */}
+            <h3 className="text-xl font-bold text-center text-foreground mb-4">
+              {showEmailForm 
+                ? (isLogin ? 'Sign In' : 'Create Account')
+                : 'Create an Account'}
+            </h3>
+
             {!showEmailForm ? (
-              /* Initial view - two buttons */
-              <div className="space-y-4">
+              /* Initial view - Google and Email buttons */
+              <div className="space-y-3">
                 {/* Google Sign In */}
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading}
-                  className="w-full h-14 rounded-2xl border-muted/30 bg-white hover:bg-muted/10 text-foreground font-medium text-base transition-all"
+                  className="w-full h-12 rounded-2xl border-muted/40 bg-white hover:bg-muted/10 text-foreground font-medium text-base transition-all"
                 >
                   {googleLoading ? (
                     <span className="flex items-center gap-2">
@@ -143,21 +178,38 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                   )}
                 </Button>
 
-                {/* Email Sign In/Up Button */}
+                {/* Email Button */}
                 <Button
                   type="button"
                   onClick={() => setShowEmailForm(true)}
-                  className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background font-semibold text-base shadow-lg shadow-foreground/20 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span className="flex items-center justify-center gap-3">
                     <Mail className="w-5 h-5" />
                     Continue with Email
                   </span>
                 </Button>
+
+                {/* Already have account - Login link */}
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEmailForm(true);
+                      setIsLogin(true);
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Already have an account?{' '}
+                    <span className="font-semibold text-primary underline-offset-2 hover:underline">
+                      Log in
+                    </span>
+                  </button>
+                </div>
               </div>
             ) : (
               /* Email form view */
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Back button */}
                 <button
                   type="button"
@@ -168,7 +220,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                   Back
                 </button>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3">
                   {!isLogin && (
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
@@ -178,7 +230,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                         placeholder="Your name"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        className="pl-12 h-14 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
+                        className="pl-12 h-12 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
                       />
                     </div>
                   )}
@@ -192,7 +244,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="pl-12 h-14 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
+                      className="pl-12 h-12 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
                     />
                   </div>
 
@@ -206,13 +258,13 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="pl-12 h-14 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
+                      className="pl-12 h-12 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
                     />
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-14 rounded-2xl bg-foreground hover:bg-foreground/90 text-background font-semibold text-base shadow-lg shadow-foreground/20 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                     disabled={loading}
                   >
                     {loading ? (
@@ -232,7 +284,8 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                   </Button>
                 </form>
 
-                <div className="pt-4 border-t border-muted/20">
+                {/* Toggle login/signup + Forgot password */}
+                <div className="pt-3 border-t border-muted/20 space-y-2">
                   <button
                     type="button"
                     onClick={() => setIsLogin(!isLogin)}
@@ -245,13 +298,22 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                       {isLogin ? 'Sign up' : 'Sign in'}
                     </span>
                   </button>
+                  
+                  {isLogin && (
+                    <button
+                      type="button"
+                      className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Terms text - black text below white card */}
-          <p className="text-center text-xs text-foreground/70 mt-6 px-4">
+          {/* Terms text */}
+          <p className="text-center text-xs text-white/80 mt-4 px-4 drop-shadow-md">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>
