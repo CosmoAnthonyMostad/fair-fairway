@@ -36,7 +36,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         if (error) throw error;
         toast({
           title: "Account created!",
-          description: "Welcome to the golf app.",
+          description: "Welcome to MyGolfApp.",
         });
       }
       onSuccess?.();
@@ -109,7 +109,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
             paintOrder: 'stroke fill',
           }}
         >
-          Golf App
+          MyGolfApp
         </h1>
       </div>
 

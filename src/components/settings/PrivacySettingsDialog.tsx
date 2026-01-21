@@ -45,7 +45,7 @@ export const PrivacySettingsDialog = ({
             <div className="p-4 bg-secondary/50 rounded-lg">
               <h3 className="font-medium text-foreground mb-2">Account Deletion</h3>
               <p className="text-sm text-muted-foreground">
-                To delete your account and all associated data, please contact support at support@golfapp.com.
+                To delete your account and all associated data, please contact support at support@mygolfapp.com.
               </p>
             </div>
           </div>
