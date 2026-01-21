@@ -143,7 +143,8 @@
   }
   
   .pt-safe {
-    padding-top: env(safe-area-inset-top, 0);
+    /* Fallback of 44px for browsers, overridden by safe-area on iOS devices */
+    padding-top: max(env(safe-area-inset-top, 0px), 44px);
   }
   
   .pb-safe {
