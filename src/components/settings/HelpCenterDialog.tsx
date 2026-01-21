@@ -83,7 +83,7 @@ export const HelpCenterDialog = ({
             </p>
             <Button variant="outline" className="w-full gap-2">
               <Mail className="w-4 h-4" />
-              support@golfapp.com
+              support@mygolfapp.com
             </Button>
           </div>
 
