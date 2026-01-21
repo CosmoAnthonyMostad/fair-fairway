@@ -86,15 +86,15 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Big Bubble Letters Header */}
-      <div className="relative z-10 pt-12 pb-4 text-center px-4">
+      <div className="relative z-10 pt-20 pb-4 text-center px-4">
         {/* Welcome */}
         <h1 
-          className="text-5xl sm:text-6xl font-black tracking-tight leading-none"
+          className="text-6xl sm:text-7xl font-black tracking-tight leading-none"
           style={{
             fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif",
             color: 'white',
-            textShadow: '3px 3px 0 #166534, -1px -1px 0 #166534, 1px -1px 0 #166534, -1px 1px 0 #166534, 4px 4px 8px rgba(0,0,0,0.4)',
-            WebkitTextStroke: '2px #166534',
+            textShadow: '4px 4px 0 #166534, -2px -2px 0 #166534, 2px -2px 0 #166534, -2px 2px 0 #166534, 5px 5px 10px rgba(0,0,0,0.5)',
+            WebkitTextStroke: '2.5px #166534',
             paintOrder: 'stroke fill',
           }}
         >
@@ -103,12 +103,12 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         
         {/* to the */}
         <h2 
-          className="text-3xl sm:text-4xl font-bold mt-1"
+          className="text-4xl sm:text-5xl font-bold mt-2"
           style={{
             fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif",
             color: 'white',
-            textShadow: '2px 2px 0 #166534, -1px -1px 0 #166534, 1px -1px 0 #166534, -1px 1px 0 #166534, 3px 3px 6px rgba(0,0,0,0.4)',
-            WebkitTextStroke: '1.5px #166534',
+            textShadow: '3px 3px 0 #166534, -1px -1px 0 #166534, 1px -1px 0 #166534, -1px 1px 0 #166534, 4px 4px 8px rgba(0,0,0,0.4)',
+            WebkitTextStroke: '2px #166534',
             paintOrder: 'stroke fill',
           }}
         >
@@ -117,12 +117,12 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         
         {/* Golf App */}
         <h1 
-          className="text-5xl sm:text-6xl font-black tracking-tight mt-1"
+          className="text-7xl sm:text-8xl font-black tracking-tight mt-2"
           style={{
             fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif",
             color: 'white',
-            textShadow: '3px 3px 0 #166534, -1px -1px 0 #166534, 1px -1px 0 #166534, -1px 1px 0 #166534, 4px 4px 8px rgba(0,0,0,0.4)',
-            WebkitTextStroke: '2px #166534',
+            textShadow: '5px 5px 0 #166534, -2px -2px 0 #166534, 2px -2px 0 #166534, -2px 2px 0 #166534, 6px 6px 12px rgba(0,0,0,0.5)',
+            WebkitTextStroke: '3px #166534',
             paintOrder: 'stroke fill',
           }}
         >
