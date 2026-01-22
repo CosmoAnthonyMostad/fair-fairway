@@ -84,7 +84,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
           Welcome
         </h1>
         
-        {/* to the */}
+        {/* to */}
         <h2 
           className="text-4xl sm:text-5xl font-bold mt-2"
           style={{
@@ -95,7 +95,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
             paintOrder: 'stroke fill',
           }}
         >
-          to the
+          to
         </h2>
         
         {/* Golf App */}
