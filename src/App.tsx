@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import FriendProfile from "./pages/FriendProfile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Support from "./pages/Support";
 import MainLayout from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
@@ -105,6 +106,7 @@ const AppRoutes = () => {
           </PublicRoute>
         }
       />
+      <Route path="/support" element={<Support />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
