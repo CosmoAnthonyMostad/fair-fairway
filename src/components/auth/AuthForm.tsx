@@ -98,9 +98,9 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
           to
         </h2>
         
-        {/* Golf App */}
+        {/* MyGolfApp */}
         <h1 
-          className="text-7xl sm:text-8xl font-black tracking-tight mt-2"
+          className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight mt-2"
           style={{
             fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif",
             color: 'white',
