@@ -39,16 +39,14 @@ const FindFriendsDialog = ({
     
     setSearching(true);
     try {
-      // Search profiles by email (case insensitive)
+      // Use secure RPC function to search by email without exposing emails
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .ilike('email', `%${searchQuery}%`);
+        .rpc('search_user_by_email', { search_email: searchQuery.trim() });
 
       if (error) throw error;
 
       // Filter out current user and existing friends
-      const filtered = (data || []).filter(p => 
+      const filtered = (data || []).filter((p: Profile) => 
         p.user_id !== user?.id && !existingFriendIds.includes(p.user_id)
       );
 
@@ -57,7 +55,7 @@ const FindFriendsDialog = ({
       if (filtered.length === 0) {
         toast({
           title: 'No results',
-          description: 'No users found with that name',
+          description: 'No users found with that email',
         });
       }
     } catch (error) {
