@@ -14,16 +14,38 @@ interface CreateGroupDialogProps {
   friends: Friend[];
 }
 
+// Input validation constants
+const MAX_GROUP_NAME_LENGTH = 50;
+
 const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup, friends }: CreateGroupDialogProps) => {
   const [name, setName] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const filteredFriends = friends.filter(friend => 
     friend.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
     searchQuery === ''
   );
+
+  const validateGroupName = (value: string): string | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return 'Group name is required';
+    if (trimmed.length > MAX_GROUP_NAME_LENGTH) {
+      return `Group name must be ${MAX_GROUP_NAME_LENGTH} characters or less`;
+    }
+    if (/[<>]/.test(trimmed)) {
+      return 'Group name contains invalid characters';
+    }
+    return null;
+  };
+
+  const handleNameChange = (value: string) => {
+    const limited = value.slice(0, MAX_GROUP_NAME_LENGTH);
+    setName(limited);
+    setValidationError(validateGroupName(limited));
+  };
 
   const handleToggleFriend = (userId: string) => {
     setSelectedFriends(prev => 
@@ -35,7 +57,12 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup, friends }: Creat
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    
+    const error = validateGroupName(name);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
 
     setLoading(true);
     const result = await onCreateGroup(name.trim(), selectedFriends);
@@ -45,6 +72,7 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup, friends }: Creat
       setName('');
       setSelectedFriends([]);
       setSearchQuery('');
+      setValidationError(null);
       onOpenChange(false);
     }
   };
@@ -53,6 +81,7 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup, friends }: Creat
     setName('');
     setSelectedFriends([]);
     setSearchQuery('');
+    setValidationError(null);
     onOpenChange(false);
   };
 
@@ -75,9 +104,13 @@ const CreateGroupDialog = ({ open, onOpenChange, onCreateGroup, friends }: Creat
               id="group-name"
               placeholder="e.g., Weekend Warriors"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
+              maxLength={MAX_GROUP_NAME_LENGTH}
               autoFocus
             />
+            {validationError && (
+              <p className="text-xs text-destructive">{validationError}</p>
+            )}
           </div>
 
           {/* Friends Selection */}
