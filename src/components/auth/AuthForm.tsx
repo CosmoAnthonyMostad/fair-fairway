@@ -19,20 +19,71 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
+  // Input validation constants
+  const MAX_DISPLAY_NAME_LENGTH = 50;
+  const MAX_EMAIL_LENGTH = 255;
+  const MIN_PASSWORD_LENGTH = 6;
+  const MAX_PASSWORD_LENGTH = 128;
+
+  const validateInputs = (): string | null => {
+    // Validate display name (only for signup)
+    if (!isLogin) {
+      const trimmedName = displayName.trim();
+      if (trimmedName.length > MAX_DISPLAY_NAME_LENGTH) {
+        return `Display name must be ${MAX_DISPLAY_NAME_LENGTH} characters or less`;
+      }
+      // Check for potentially dangerous characters
+      if (/[<>]/.test(trimmedName)) {
+        return 'Display name contains invalid characters';
+      }
+    }
+
+    // Validate email
+    const trimmedEmail = email.trim();
+    if (trimmedEmail.length > MAX_EMAIL_LENGTH) {
+      return `Email must be ${MAX_EMAIL_LENGTH} characters or less`;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      return 'Please enter a valid email address';
+    }
+
+    // Validate password
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    }
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      return `Password must be ${MAX_PASSWORD_LENGTH} characters or less`;
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs before submission
+    const validationError = validateInputs();
+    if (validationError) {
+      toast({
+        title: "Validation Error",
+        description: validationError,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(email.trim(), password);
         if (error) throw error;
         toast({
           title: "Welcome back!",
           description: "You've successfully signed in.",
         });
       } else {
-        const { error } = await signUp(email, password, displayName);
+        const { error } = await signUp(email.trim(), password, displayName.trim());
         if (error) throw error;
         toast({
           title: "Account created!",
@@ -150,7 +201,8 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                         type="text"
                         placeholder="Your name"
                         value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
+                        onChange={(e) => setDisplayName(e.target.value.slice(0, MAX_DISPLAY_NAME_LENGTH))}
+                        maxLength={MAX_DISPLAY_NAME_LENGTH}
                         className="pl-12 h-12 rounded-2xl border-muted/30 bg-muted/30 text-base placeholder:text-muted-foreground/50 focus:bg-white transition-colors"
                       />
                     </div>
