@@ -12,6 +12,7 @@ import FriendProfile from "./pages/FriendProfile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Support from "./pages/Support";
+import Terms from "./pages/Terms";
 import MainLayout from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
@@ -107,6 +108,7 @@ const AppRoutes = () => {
         }
       />
       <Route path="/support" element={<Support />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
