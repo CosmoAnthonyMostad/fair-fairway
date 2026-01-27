@@ -1,7 +1,8 @@
-import { Users, ChevronRight, Crown } from 'lucide-react';
+import { ChevronRight, Crown, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import type { Group } from '@/hooks/useGroups';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface GroupCardProps {
   group: Group;
@@ -16,20 +17,36 @@ const GroupCard = ({ group }: GroupCardProps) => {
     navigate(`/groups/${group.id}`);
   };
 
+  const memberPreviews = group.member_previews || [];
+  const displayCount = Math.min(memberPreviews.length, 4);
+  const extraCount = (group.member_count || 0) - displayCount;
+
   return (
     <button
       onClick={handleClick}
       className="w-full flex items-center gap-3 p-3 bg-card rounded-lg border border-border hover:border-primary/30 transition-colors text-left"
     >
-      <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-        {group.avatar_url ? (
-          <img
-            src={group.avatar_url}
-            alt={group.name}
-            className="w-full h-full rounded-full object-cover"
-          />
-        ) : (
-          <Users className="w-6 h-6 text-muted-foreground" />
+      {/* Avatar Stack */}
+      <div className="flex -space-x-2 flex-shrink-0">
+        {memberPreviews.slice(0, 4).map((member, index) => (
+          <Avatar
+            key={member.user_id}
+            className="w-9 h-9 border-2 border-card"
+            style={{ zIndex: 4 - index }}
+          >
+            <AvatarImage src={member.avatar_url || undefined} alt={member.display_name || 'Member'} />
+            <AvatarFallback className="bg-secondary text-xs">
+              {member.display_name?.charAt(0)?.toUpperCase() || <User className="w-4 h-4" />}
+            </AvatarFallback>
+          </Avatar>
+        ))}
+        {extraCount > 0 && (
+          <div 
+            className="w-9 h-9 rounded-full bg-secondary border-2 border-card flex items-center justify-center text-xs font-medium text-muted-foreground"
+            style={{ zIndex: 0 }}
+          >
+            +{extraCount}
+          </div>
         )}
       </div>
       
