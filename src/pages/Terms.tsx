@@ -157,7 +157,7 @@ const Terms = () => {
                 If you have any questions about these Terms of Service, please contact us at:
               </p>
               <p className="text-primary font-medium mt-2">
-                support@mygolfapp.com
+                support@mygolfapp.info
               </p>
             </section>
 

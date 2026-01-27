@@ -57,7 +57,7 @@ const Support = () => {
     },
     {
       question: "How do I delete my account?",
-      answer: "Contact us at support@mygolfapp.com and we'll process your account deletion request. All your data will be permanently removed."
+      answer: "Contact us at support@mygolfapp.info and we'll process your account deletion request. All your data will be permanently removed."
     }
   ];
 
@@ -139,9 +139,9 @@ const Support = () => {
               We're here to help! Contact our support team for any questions or issues.
             </p>
             <Button variant="outline" className="gap-2" asChild>
-              <a href="mailto:support@mygolfapp.com">
+              <a href="mailto:support@mygolfapp.info">
                 <Mail className="w-4 h-4" />
-                support@mygolfapp.com
+                support@mygolfapp.info
               </a>
             </Button>
           </CardContent>
