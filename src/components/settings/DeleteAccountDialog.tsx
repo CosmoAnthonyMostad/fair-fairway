@@ -20,7 +20,7 @@ interface DeleteAccountDialogProps {
 }
 
 export const DeleteAccountDialog = ({ open, onOpenChange }: DeleteAccountDialogProps) => {
-  const { user, session } = useAuth();
+  const { user, session, signOut } = useAuth();
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -46,6 +46,9 @@ export const DeleteAccountDialog = ({ open, onOpenChange }: DeleteAccountDialogP
         console.error('Delete user function error:', data.error);
         throw new Error(data.error);
       }
+
+      // Sign out to clear local session and redirect to auth
+      await signOut();
 
       toast({
         title: 'Account Deleted',
