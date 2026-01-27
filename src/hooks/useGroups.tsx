@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
+export interface GroupMemberPreview {
+  user_id: string;
+  avatar_url: string | null;
+  display_name: string | null;
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -10,6 +16,7 @@ export interface Group {
   owner_id: string;
   created_at: string;
   member_count?: number;
+  member_previews?: GroupMemberPreview[];
 }
 
 export const useGroups = () => {
@@ -45,19 +52,38 @@ export const useGroups = () => {
 
       if (groupsError) throw groupsError;
 
-      // Get member counts for each group
-      const groupsWithCounts = await Promise.all(
+      // Get member counts and preview avatars for each group
+      const groupsWithDetails = await Promise.all(
         (groupsData || []).map(async (group) => {
-          const { count } = await supabase
+          // Get members for this group
+          const { data: members } = await supabase
             .from('group_members')
-            .select('*', { count: 'exact', head: true })
+            .select('user_id')
             .eq('group_id', group.id);
           
-          return { ...group, member_count: count || 0 };
+          const memberCount = members?.length || 0;
+          const memberUserIds = members?.map(m => m.user_id) || [];
+          
+          // Get profile previews for up to 4 members
+          let memberPreviews: GroupMemberPreview[] = [];
+          if (memberUserIds.length > 0) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('user_id, avatar_url, display_name')
+              .in('user_id', memberUserIds.slice(0, 4));
+            
+            memberPreviews = (profiles || []).map(p => ({
+              user_id: p.user_id,
+              avatar_url: p.avatar_url,
+              display_name: p.display_name,
+            }));
+          }
+          
+          return { ...group, member_count: memberCount, member_previews: memberPreviews };
         })
       );
 
-      setGroups(groupsWithCounts);
+      setGroups(groupsWithDetails);
     } catch (error: any) {
       console.error('Error fetching groups:', error);
       toast({
