@@ -9,8 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,13 +22,10 @@ interface DeleteAccountDialogProps {
 export const DeleteAccountDialog = ({ open, onOpenChange }: DeleteAccountDialogProps) => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [confirmText, setConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isConfirmed = confirmText.toLowerCase() === 'delete';
-
   const handleDeleteAccount = async () => {
-    if (!user || !isConfirmed) return;
+    if (!user) return;
 
     setIsDeleting(true);
 
@@ -100,7 +95,6 @@ export const DeleteAccountDialog = ({ open, onOpenChange }: DeleteAccountDialogP
   };
 
   const handleClose = () => {
-    setConfirmText('');
     onOpenChange(false);
   };
 
@@ -123,26 +117,13 @@ export const DeleteAccountDialog = ({ open, onOpenChange }: DeleteAccountDialogP
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="space-y-2 py-4">
-          <Label htmlFor="confirm-delete">
-            Type <span className="font-mono font-bold">delete</span> to confirm
-          </Label>
-          <Input
-            id="confirm-delete"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="delete"
-            autoComplete="off"
-          />
-        </div>
-
         <AlertDialogFooter>
           <AlertDialogCancel onClick={handleClose} disabled={isDeleting}>
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDeleteAccount}
-            disabled={!isConfirmed || isDeleting}
+            disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isDeleting ? (
