@@ -179,10 +179,15 @@ export const EditProfileDialog = ({
               >
                 <Camera className="w-4 h-4" />
               </button>
+              {/* 
+                Using accept="image/*" without capture attribute
+                This forces photo library picker only, avoiding camera access
+                which can crash on iPad without proper Capacitor camera setup
+              */}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                 onChange={handleFileSelect}
                 className="hidden"
               />
