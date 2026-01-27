@@ -636,7 +636,6 @@ export const CreateMatchDialog = ({
                                   </Avatar>
                                   <span className="truncate">
                                     {getMemberByUserId(playerId)?.profile?.display_name || 'Unknown'}
-                                    {playerId === user?.id && ' (You)'}
                                   </span>
                                 </div>
                               ) : (
@@ -663,7 +662,6 @@ export const CreateMatchDialog = ({
                                   </Avatar>
                                   <span>
                                     {member.profile?.display_name || 'Unknown'}
-                                    {member.user_id === user?.id && ' (You)'}
                                   </span>
                                 </div>
                               </SelectItem>

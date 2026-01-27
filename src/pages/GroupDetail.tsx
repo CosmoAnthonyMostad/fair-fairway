@@ -406,7 +406,6 @@ const GroupDetail = () => {
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-foreground truncate">{member.display_name || 'Anonymous'}</p>
                     {member.user_id === group.owner_id && <Crown className="w-4 h-4 text-accent flex-shrink-0" />}
-                    {isCurrentUser && <span className="text-xs text-muted-foreground">(You)</span>}
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
