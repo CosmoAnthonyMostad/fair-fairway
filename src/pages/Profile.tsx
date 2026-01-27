@@ -100,17 +100,27 @@ const Profile = () => {
                 key={match.id} 
                 className="bg-card rounded-lg border border-border p-3 flex items-center gap-3"
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  match.is_winner 
-                    ? 'bg-success/10 text-success' 
-                    : 'bg-destructive/10 text-destructive'
-                }`}>
-                  {match.is_winner ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <X className="w-5 h-5" />
-                  )}
-                </div>
+                {match.photo_url ? (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                    <img 
+                      src={match.photo_url} 
+                      alt="Match photo" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    match.is_winner 
+                      ? 'bg-success/10 text-success' 
+                      : 'bg-destructive/10 text-destructive'
+                  }`}>
+                    {match.is_winner ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <X className="w-5 h-5" />
+                    )}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground text-sm truncate">
                     {match.course_name}

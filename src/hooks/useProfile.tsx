@@ -24,6 +24,7 @@ export interface RecentMatch {
   is_winner: boolean;
   score: number | null;
   opponent_score: number | null;
+  photo_url: string | null;
 }
 
 export const useProfile = () => {
@@ -69,6 +70,7 @@ export const useProfile = () => {
               match_date,
               status,
               format,
+              photo_url,
               courses(name)
             )
           )
@@ -109,6 +111,7 @@ export const useProfile = () => {
             is_winner: team.is_winner,
             score: team.score,
             opponent_score: opponentTeam?.score || null,
+            photo_url: match.photo_url || null,
           });
         }
       }
