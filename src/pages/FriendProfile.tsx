@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { User, Trophy, Target, Calendar, MapPin, ArrowLeft, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { MatchQuickViewDialog } from '@/components/matches/MatchQuickViewDialog';
 
 interface ProfileData {
   id: string;
@@ -24,6 +24,7 @@ interface RecentMatch {
   is_winner: boolean;
   score: number | null;
   opponent_score: number | null;
+  photo_url: string | null;
 }
 
 const formatLabel = (matchFormat: string): string => {
@@ -40,12 +41,12 @@ const formatLabel = (matchFormat: string): string => {
 const FriendProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [calculatedStats, setCalculatedStats] = useState({ rounds: 0, wins: 0 });
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -116,10 +117,10 @@ const FriendProfile = () => {
 
             setCalculatedStats({ rounds: totalRounds, wins: totalWins });
 
-            // Get recent matches with course info (limit 10)
+            // Get recent matches with course info and photo (limit 10)
             const { data: matches, error: matchesError } = await supabase
               .from('matches')
-              .select('id, match_date, format, status, courses(name)')
+              .select('id, match_date, format, status, photo_url, courses(name)')
               .in('id', matchIds)
               .eq('status', 'completed')
               .order('match_date', { ascending: false })
@@ -139,6 +140,7 @@ const FriendProfile = () => {
                 is_winner: team?.is_winner || false,
                 score: team?.score || null,
                 opponent_score: otherTeam?.score || null,
+                photo_url: match.photo_url || null,
               };
             });
 
@@ -239,21 +241,32 @@ const FriendProfile = () => {
         {recentMatches.length > 0 ? (
           <div className="space-y-2">
             {recentMatches.map((match) => (
-              <div 
-                key={match.id} 
-                className="bg-card rounded-lg border border-border p-3 flex items-center gap-3"
+              <button 
+                key={match.id}
+                onClick={() => setSelectedMatchId(match.id)}
+                className="w-full bg-card rounded-lg border border-border p-3 flex items-center gap-3 hover:border-primary/30 transition-colors text-left"
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  match.is_winner 
-                    ? 'bg-success/10 text-success' 
-                    : 'bg-destructive/10 text-destructive'
-                }`}>
-                  {match.is_winner ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <X className="w-5 h-5" />
-                  )}
-                </div>
+                {match.photo_url ? (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                    <img 
+                      src={match.photo_url} 
+                      alt="Match photo" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    match.is_winner 
+                      ? 'bg-success/10 text-success' 
+                      : 'bg-destructive/10 text-destructive'
+                  }`}>
+                    {match.is_winner ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <X className="w-5 h-5" />
+                    )}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground text-sm truncate">
                     {match.course_name}
@@ -272,7 +285,7 @@ const FriendProfile = () => {
                     </p>
                   )}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         ) : (
@@ -283,6 +296,12 @@ const FriendProfile = () => {
           </div>
         )}
       </section>
+
+      <MatchQuickViewDialog
+        open={selectedMatchId !== null}
+        onOpenChange={(open) => !open && setSelectedMatchId(null)}
+        matchId={selectedMatchId}
+      />
     </div>
   );
 };

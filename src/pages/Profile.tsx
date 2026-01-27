@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { User, Trophy, Target, Calendar, MapPin, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
+import { MatchQuickViewDialog } from '@/components/matches/MatchQuickViewDialog';
 import { format } from 'date-fns';
 
 const formatLabel = (matchFormat: string): string => {
@@ -21,6 +22,7 @@ const Profile = () => {
   const { user } = useAuth();
   const { profile, recentMatches, loading, updateProfile, uploadAvatar } = useProfile();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   // Win rate = wins / rounds
   const winRate = profile?.total_rounds && profile.total_rounds > 0 
@@ -96,9 +98,10 @@ const Profile = () => {
         {recentMatches.length > 0 ? (
           <div className="space-y-2">
             {recentMatches.map((match) => (
-              <div 
+              <button 
                 key={match.id} 
-                className="bg-card rounded-lg border border-border p-3 flex items-center gap-3"
+                onClick={() => setSelectedMatchId(match.id)}
+                className="w-full bg-card rounded-lg border border-border p-3 flex items-center gap-3 hover:border-primary/30 transition-colors text-left"
               >
                 {match.photo_url ? (
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
@@ -139,7 +142,7 @@ const Profile = () => {
                     </p>
                   )}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         ) : (
@@ -168,6 +171,12 @@ const Profile = () => {
         profile={profile}
         onSave={updateProfile}
         onUploadAvatar={uploadAvatar}
+      />
+
+      <MatchQuickViewDialog
+        open={selectedMatchId !== null}
+        onOpenChange={(open) => !open && setSelectedMatchId(null)}
+        matchId={selectedMatchId}
       />
     </>
   );
