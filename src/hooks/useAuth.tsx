@@ -50,11 +50,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    return { error };
+    
+    if (error) {
+      return { error };
+    }
+
+    // Check if the user has a profile (protection against orphaned auth users)
+    if (data?.user) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        // No profile found - sign out and return error
+        await supabase.auth.signOut();
+        return { error: new Error('No account found with this email') };
+      }
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
