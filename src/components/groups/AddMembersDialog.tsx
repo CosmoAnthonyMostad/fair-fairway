@@ -68,10 +68,14 @@ export const AddMembersDialog = ({
       // Add selected friends as members with GSI from their PHI
       const memberInserts = selectedFriends.map(userId => {
         const profile = friendProfiles?.find(p => p.user_id === userId);
+        const phi = profile?.phi;
+        if (phi === null || phi === undefined) {
+          console.warn(`User ${userId} has no PHI set, using default 20`);
+        }
         return {
           group_id: groupId,
           user_id: userId,
-          gsi: profile?.phi ?? 20,
+          gsi: phi ?? 20,
         };
       });
 

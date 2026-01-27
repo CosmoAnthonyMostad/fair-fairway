@@ -35,7 +35,7 @@ interface ScoreEntryDialogProps {
 }
 
 // Update GSI for players after a match is completed
-// Uses conservative learning rate for stability
+// Uses aggressive learning rate so matches quickly override initial PHI
 const updatePlayerGSI = async (
   groupId: string,
   teams: Team[],
@@ -43,7 +43,7 @@ const updatePlayerGSI = async (
   holesPlayed: number
 ) => {
   try {
-    // Get all players and their current GSI
+    // Get all players and their current GSI + PHI
     const allPlayerIds = teams.flatMap(t => t.players.map(p => p.user_id));
     
     const { data: memberData } = await supabase
@@ -53,6 +53,12 @@ const updatePlayerGSI = async (
       .in('user_id', allPlayerIds);
 
     if (!memberData || memberData.length === 0) return;
+
+    // Get PHI as backup for uninitialized GSI
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('user_id, phi')
+      .in('user_id', allPlayerIds);
 
     // Count completed matches for each player to determine learning rate
     const { data: matchHistory } = await supabase
@@ -90,7 +96,9 @@ const updatePlayerGSI = async (
           const member = memberData.find(m => m.user_id === player.user_id);
           if (!member) continue;
 
-          const currentGsi = member.gsi ?? 20;
+          // Use GSI if set, otherwise fall back to PHI
+          const profile = profileData?.find(p => p.user_id === player.user_id);
+          const currentGsi = member.gsi ?? profile?.phi ?? 20;
           const rounds = playerRounds[player.user_id] || 0;
           
           // Score differential: how many strokes off from expected
