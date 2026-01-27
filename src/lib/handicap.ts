@@ -126,10 +126,16 @@ export const calculateMatchStrokes = (teamHandicaps: number[]): number[] => {
 
 /**
  * Calculate GSI adjustment after a match
- * Uses conservative learning rate for stability
+ * Uses AGGRESSIVE learning rate so matches matter more than initial PHI
+ * 
+ * The system learns fast early on, then stabilizes:
+ * - Match 1: ~60% weight on new data
+ * - Match 3: ~40% weight  
+ * - Match 5: ~30% weight
+ * - Match 10: ~18% weight
  * 
  * @param currentGsi Current GSI
- * @param matchesPlayed Number of completed matches in this group
+ * @param matchesPlayed Number of completed matches in this group (before this one)
  * @param scoreDifferential How many strokes the player was off from expected (positive = worse than expected)
  * @param holesPlayed Number of holes played (affects weight)
  * @returns New GSI value
@@ -140,25 +146,26 @@ export const calculateGsiAdjustment = (
   scoreDifferential: number,
   holesPlayed: number = 18
 ): number => {
-  // Conservative learning rate: alpha = 1 / (n + 3)
-  // n=0: 0.33, n=1: 0.25, n=5: 0.125, n=10: 0.077
-  const alpha = 1 / (matchesPlayed + 3);
+  // Aggressive learning rate: alpha = 1 / (n + 1.5)
+  // n=0: 0.67, n=1: 0.40, n=3: 0.22, n=5: 0.15, n=10: 0.09
+  // This makes early matches count A LOT so PHI quickly becomes irrelevant
+  const alpha = 1 / (matchesPlayed + 1.5);
   
-  // Partial round weight
+  // Partial round weight (9 holes = 50% weight)
   const roundWeight = holesPlayed / 18;
   
-  // Additional dampening factor for conservative movement
-  const dampeningFactor = 0.5;
-  
-  // Calculate adjustment (capped at ±2 strokes)
-  const rawAdjustment = scoreDifferential * alpha * roundWeight * dampeningFactor;
-  const cappedAdjustment = Math.max(-2, Math.min(2, rawAdjustment));
+  // Calculate adjustment (capped at ±3 strokes per match for faster convergence)
+  const rawAdjustment = scoreDifferential * alpha * roundWeight;
+  const cappedAdjustment = Math.max(-3, Math.min(3, rawAdjustment));
   
   // Apply adjustment
   const newGsi = currentGsi + cappedAdjustment;
   
+  // Clamp GSI to reasonable range (-10 to 54, like USGA)
+  const clampedGsi = Math.max(-10, Math.min(54, newGsi));
+  
   // Round to 1 decimal place
-  return Math.round(newGsi * 10) / 10;
+  return Math.round(clampedGsi * 10) / 10;
 };
 
 /**

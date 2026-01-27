@@ -233,9 +233,13 @@ export const CreateMatchDialog = ({
   };
 
   // Get a player's course handicap
+  // Prioritizes GSI if it's been updated (not default 20), otherwise uses PHI
   const getPlayerCourseHandicap = (userId: string): number => {
     if (!selectedCourse) return 0;
     const member = groupMembers.find(m => m.user_id === userId);
+    
+    // Use GSI if it exists and isn't null, otherwise fall back to PHI
+    // If both are null/undefined, default to 20
     const gsi = member?.gsi ?? member?.profile?.phi ?? 20;
     const holes = parseInt(holesPlayed);
     

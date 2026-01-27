@@ -122,6 +122,7 @@ export const TeamSetupDialog = ({
     }
   };
 
+  // Get effective handicap: GSI if available, otherwise PHI
   const getGsi = (member: GroupMember): number => {
     return member.gsi ?? member.phi ?? 20;
   };

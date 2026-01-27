@@ -93,13 +93,18 @@ export const useGroups = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
+      const creatorPhi = creatorProfile?.phi;
+      if (creatorPhi === null || creatorPhi === undefined) {
+        console.warn('Creator has no PHI set, using default 20');
+      }
+
       // Add creator as a member with GSI initialized from PHI
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({
           group_id: group.id,
           user_id: user.id,
-          gsi: creatorProfile?.phi ?? 20,
+          gsi: creatorPhi ?? 20,
         });
 
       if (memberError) throw memberError;
