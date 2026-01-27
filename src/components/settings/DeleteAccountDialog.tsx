@@ -20,61 +20,32 @@ interface DeleteAccountDialogProps {
 }
 
 export const DeleteAccountDialog = ({ open, onOpenChange }: DeleteAccountDialogProps) => {
-  const { user, signOut } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteAccount = async () => {
-    if (!user) return;
+    if (!user || !session) return;
 
     setIsDeleting(true);
 
     try {
-      // Delete user's profile and related data
-      // The database cascade or RLS will handle related records
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', user.id);
+      // Call the edge function to delete all user data and auth record
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      if (profileError) {
-        console.error('Error deleting profile:', profileError);
+      if (error) {
+        console.error('Error calling delete-user function:', error);
+        throw error;
       }
 
-      // Delete friendships where user is involved
-      await supabase
-        .from('friendships')
-        .delete()
-        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
-
-      // Delete group memberships
-      await supabase
-        .from('group_members')
-        .delete()
-        .eq('user_id', user.id);
-
-      // Delete group invites
-      await supabase
-        .from('group_invites')
-        .delete()
-        .or(`inviter_id.eq.${user.id},invitee_id.eq.${user.id}`);
-
-      // Delete notifications
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', user.id);
-
-      // Delete team players entries
-      await supabase
-        .from('team_players')
-        .delete()
-        .eq('user_id', user.id);
-
-      // Sign out the user (this effectively "deletes" their session)
-      // Note: Full auth.users deletion requires admin/service role
-      // For now, we delete all user data and sign them out
-      await signOut();
+      if (data?.error) {
+        console.error('Delete user function error:', data.error);
+        throw new Error(data.error);
+      }
 
       toast({
         title: 'Account Deleted',
