@@ -8,7 +8,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, User } from 'lucide-react';
+import { Camera, User, Image as ImageIcon } from 'lucide-react';
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import type { Profile } from '@/hooks/useProfile';
 
 interface EditProfileDialogProps {
@@ -39,6 +41,7 @@ export const EditProfileDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -97,6 +100,10 @@ export const EditProfileDialog = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    await processFile(file);
+  };
+
+  const processFile = async (file: File) => {
     // Preview
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -111,6 +118,45 @@ export const EditProfileDialog = ({
       setAvatarPreview(url);
     }
     setIsUploading(false);
+  };
+
+  const handleCapacitorCamera = async (source: CameraSource) => {
+    try {
+      setShowPhotoOptions(false);
+      
+      const image = await CapCamera.getPhoto({
+        quality: 90,
+        allowEditing: true,
+        resultType: CameraResultType.DataUrl,
+        source: source,
+        // iPad requires popover presentation for camera
+        presentationStyle: 'popover',
+        // Setting width/height helps with memory on older iPads
+        width: 800,
+        height: 800,
+      });
+
+      if (image.dataUrl) {
+        // Convert data URL to File for upload
+        const response = await fetch(image.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+        await processFile(file);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      // User cancelled or error - just close options
+      setShowPhotoOptions(false);
+    }
+  };
+
+  const handlePhotoButtonClick = () => {
+    if (Capacitor.isNativePlatform()) {
+      setShowPhotoOptions(true);
+    } else {
+      // Web fallback - just open file picker
+      fileInputRef.current?.click();
+    }
   };
 
   const handleSubmit = async () => {
@@ -158,7 +204,7 @@ export const EditProfileDialog = ({
 
         <div className="space-y-6">
           {/* Avatar */}
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-3">
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-4 border-border">
                 {avatarPreview ? (
@@ -173,17 +219,13 @@ export const EditProfileDialog = ({
               </div>
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handlePhotoButtonClick}
                 disabled={isUploading}
                 className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 <Camera className="w-4 h-4" />
               </button>
-              {/* 
-                Using accept="image/*" without capture attribute
-                This forces photo library picker only, avoiding camera access
-                which can crash on iPad without proper Capacitor camera setup
-              */}
+              {/* Hidden file input for web fallback */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -192,10 +234,42 @@ export const EditProfileDialog = ({
                 className="hidden"
               />
             </div>
+            
+            {/* Native photo options (Camera/Library picker) */}
+            {showPhotoOptions && Capacitor.isNativePlatform() && (
+              <div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCapacitorCamera(CameraSource.Camera)}
+                  className="gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  Take Photo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCapacitorCamera(CameraSource.Photos)}
+                  className="gap-2"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  Choose Photo
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPhotoOptions(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+            
+            {isUploading && (
+              <p className="text-center text-sm text-muted-foreground">Uploading...</p>
+            )}
           </div>
-          {isUploading && (
-            <p className="text-center text-sm text-muted-foreground">Uploading...</p>
-          )}
 
           {/* Display Name */}
           <div className="space-y-2">
