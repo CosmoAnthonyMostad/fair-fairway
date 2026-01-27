@@ -7,13 +7,15 @@ import {
   HelpCircle, 
   FileText, 
   LogOut,
-  User
+  User,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 import { NotificationSettingsDialog } from '@/components/settings/NotificationSettingsDialog';
 import { PrivacySettingsDialog } from '@/components/settings/PrivacySettingsDialog';
 import { HelpCenterDialog } from '@/components/settings/HelpCenterDialog';
+import { DeleteAccountDialog } from '@/components/settings/DeleteAccountDialog';
 import { useProfile } from '@/hooks/useProfile';
 
 const SettingsItem = ({ 
@@ -45,6 +47,7 @@ const Settings = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
   return (
     <>
@@ -77,6 +80,25 @@ const Settings = () => {
           <SettingsItem icon={HelpCircle} label="Help Center" onClick={() => setHelpOpen(true)} />
           <div className="h-px bg-border ml-12" />
           <SettingsItem icon={FileText} label="Terms of Service" onClick={() => window.open('/terms', '_blank')} />
+        </div>
+      </section>
+
+      {/* Danger Zone */}
+      <section className="py-4">
+        <h2 className="px-4 text-sm font-semibold text-destructive uppercase tracking-wide mb-2">
+          Danger Zone
+        </h2>
+        <div className="bg-card border-y border-border">
+          <button
+            onClick={() => setDeleteAccountOpen(true)}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-destructive/10 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              <span className="text-destructive">Delete Account</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-destructive/50" />
+          </button>
         </div>
       </section>
 
@@ -116,6 +138,10 @@ const Settings = () => {
       <HelpCenterDialog 
         open={helpOpen} 
         onOpenChange={setHelpOpen} 
+      />
+      <DeleteAccountDialog
+        open={deleteAccountOpen}
+        onOpenChange={setDeleteAccountOpen}
       />
     </>
   );
