@@ -301,6 +301,46 @@ npx cap init
 npx cap add ios
 ```
 
+##### iOS Privacy Permissions (CRITICAL for App Store)
+
+**The Problem We Hit**:
+Error 90683: "Missing Purpose String - NSPhotoLibraryUsageDescription" during App Store Connect upload.
+
+**Root Cause**:
+Apple requires specific privacy permission keys in Info.plist for any app that accesses sensitive device features. The `@capacitor/camera` plugin references photo library APIs, so Apple's automated validation checks for these keys—even if your code doesn't explicitly use them yet.
+
+**The Three Photo/Camera Keys You Need**:
+
+| Xcode Label (Human-Readable) | Internal Key (What Apple Checks) | When Required |
+|------------------------------|----------------------------------|---------------|
+| Privacy - Photo Library Usage Description | NSPhotoLibraryUsageDescription | Reading/selecting photos |
+| Privacy - Photo Library Additions Usage Description | NSPhotoLibraryAddUsageDescription | Saving photos to library |
+| Privacy - Camera Usage Description | NSCameraUsageDescription | Camera access |
+
+**How to Add in Xcode**:
+1. Open `ios/App/App/Info.plist` in Xcode
+2. Click the `+` button to add a new row
+3. Select the human-readable key from the dropdown (e.g., "Privacy - Photo Library Usage Description")
+4. Enter a user-facing explanation string (e.g., "We use your photo library to let you choose and upload match photos and profile pictures.")
+5. Repeat for all three keys above
+6. **Cmd+S** to save, **Cmd+Shift+K** to clean build folder
+7. **Product → Archive** to create new build
+
+**How to Verify Keys Are in Your Archive**:
+1. Xcode → Window → Organizer → Archives
+2. Select your archive → Show in Finder
+3. Right-click the `.xcarchive` file → Show Package Contents
+4. Navigate to `Products/Applications/App.app/`
+5. Open `Info.plist` and confirm `NSPhotoLibraryUsageDescription` exists with a non-empty string
+
+**Key Insight**:
+Xcode's human-readable labels (like "Privacy - Photo Library Usage Description") automatically map to Apple's internal keys (like `NSPhotoLibraryUsageDescription`). The validation happens at upload time—Apple's servers scan your binary for API usage and check for matching permission keys.
+
+**Why This Wasn't Caught Earlier**:
+- The `@capacitor/camera` plugin was added but camera features weren't fully tested in production builds
+- Apple's validation rules can change between submissions
+- Plugin updates may reference new APIs that require additional permissions
+
 **capacitor.config.ts**:
 ```typescript
 import type { CapacitorConfig } from '@capacitor/cli';
@@ -561,6 +601,8 @@ This is App #[X] in my learning curriculum.
 4. **TestFlight stuck**: Check Export Compliance in App Store Connect
 5. **Safe area issues**: Use pt-safe/pb-safe classes, not hardcoded values
 6. **Bottom nav overlap**: Main content needs pb-20 with bottom navigation
+7. **Error 90683 - Missing Purpose String**: If using `@capacitor/camera`, you MUST add all three privacy keys (Photo Library, Photo Library Additions, Camera) in Info.plist before App Store upload—even if you haven't built all camera features yet
+8. **Info.plist keys not in archive**: After adding keys, always Clean Build (Cmd+Shift+K) before Archive to ensure changes are included
 
 ### Key Commands
 ```bash
@@ -587,8 +629,9 @@ npx cap run ios
 | Date | App | What I Added |
 |------|-----|--------------|
 | Jan 2026 | MyGolfApp | Initial document with auth, RLS, Capacitor patterns |
+| Jan 2026 | MyGolfApp | iOS App Store submission learnings: Privacy permission keys (NSPhotoLibraryUsageDescription, etc.), Error 90683 fix, archive verification process |
 
 ---
 
 *Last updated: January 2026*
-*Document version: 1.0*
+*Document version: 1.1*
