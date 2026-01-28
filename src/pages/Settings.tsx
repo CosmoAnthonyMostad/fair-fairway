@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   ChevronRight, 
@@ -40,6 +41,7 @@ const SettingsItem = ({
 );
 
 const Settings = () => {
+  const navigate = useNavigate();
   const { signOut } = useAuth();
   const { profile, updateProfile, uploadAvatar } = useProfile();
   
@@ -79,7 +81,7 @@ const Settings = () => {
         <div className="bg-card border-y border-border">
           <SettingsItem icon={HelpCircle} label="Help Center" onClick={() => setHelpOpen(true)} />
           <div className="h-px bg-border ml-12" />
-          <SettingsItem icon={FileText} label="Terms of Service" onClick={() => window.open('/terms', '_blank')} />
+          <SettingsItem icon={FileText} label="Terms of Service" onClick={() => navigate('/terms')} />
         </div>
       </section>
 
