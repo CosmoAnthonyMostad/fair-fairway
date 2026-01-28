@@ -301,6 +301,37 @@ npx cap init
 npx cap add ios
 ```
 
+**capacitor.config.ts**:
+```typescript
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'app.lovable.yourprojectid',
+  appName: 'Your App Name',
+  webDir: 'dist',
+  // For development only - remove for production builds:
+  server: {
+    url: 'https://your-preview-url.lovableproject.com',
+    cleartext: true
+  }
+};
+
+export default config;
+```
+
+**iOS Safe Area Handling**:
+```css
+/* In index.css */
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 44px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* When using bottom navigation, add pb-20 to main content */
+```
+
 ##### iOS Privacy Permissions (CRITICAL for App Store)
 
 **The Problem We Hit**:
@@ -340,37 +371,6 @@ Xcode's human-readable labels (like "Privacy - Photo Library Usage Description")
 - The `@capacitor/camera` plugin was added but camera features weren't fully tested in production builds
 - Apple's validation rules can change between submissions
 - Plugin updates may reference new APIs that require additional permissions
-
-**capacitor.config.ts**:
-```typescript
-import type { CapacitorConfig } from '@capacitor/cli';
-
-const config: CapacitorConfig = {
-  appId: 'app.lovable.yourprojectid',
-  appName: 'Your App Name',
-  webDir: 'dist',
-  // For development only - remove for production builds:
-  server: {
-    url: 'https://your-preview-url.lovableproject.com',
-    cleartext: true
-  }
-};
-
-export default config;
-```
-
-**iOS Safe Area Handling**:
-```css
-/* In index.css */
-.pt-safe {
-  padding-top: max(env(safe-area-inset-top, 0px), 44px);
-}
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0);
-}
-
-/* When using bottom navigation, add pb-20 to main content */
-```
 
 **iOS Deployment Checklist**:
 1. Remove `server` block from capacitor.config.ts
